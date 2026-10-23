@@ -69,6 +69,7 @@
 
 - [x] Verify existing Pages configuration and ensure the receiver path does not replace an existing site (checked read-only on 2026-10-23: the public repository's Pages API returned 404, so no existing Pages site was configured).
 - [x] Add CI checks for receiver test/typecheck/build and manual Pages deployment under `/musicfy/cast-receiver/`, guarded by explicit confirmation that replacing the existing Pages site is safe.
+- [x] Enable GitHub Pages with GitHub Actions and publish the receiver; deploy run `39930158349` succeeded and the receiver URL returned HTTP 200.
 - [ ] Use Google Cast Console to create the private receiver app, register the Cast device, and inject the app ID locally/through CI configuration without committing secrets.
 - [ ] On the physical LG, prove custom receiver launch and one YouTube track through end, seek near middle/end, and next track.
 - [ ] If custom launch or direct audio fails due to compatibility, CORS, required headers, or URL restrictions, stop and document evidence before proposing a different transport.
@@ -78,5 +79,6 @@
 
 - Implemented: TV player/lyrics UI, the documented v1 Cast message contract, bounded/retried lyric transfer, sender-session epochs, CAF-bound snapshots and lyrics, duplicate queue-entry synchronization, stale stream-load rejection, resolver MIME propagation, safe local-player handoff, configurable receiver App ID, and a guarded manual Pages workflow.
 - Verified locally: receiver tests, typecheck, nested-path production build, dependency audit, GMS/FOSS Kotlin compilation and debug APK assembly, focused duplicate-queue identity tests, and final `git diff --check`.
-- Pending external acceptance: enable GitHub Pages with GitHub Actions, publish the receiver through the guarded manual workflow, register the private Custom Web Receiver and TV in Cast Console, configure the generated App ID locally, build/install the GMS app, and test the custom app with music on the physical LG.
-- No website was deployed and no Cast receiver was published. Account registration, any account fee, and Google/GitHub settings remain external steps.
+- Published: GitHub Pages is configured for GitHub Actions; the custom receiver is live at `https://rigelra15.github.io/musicfy/cast-receiver/` (workflow `39930158349` succeeded and the page returned HTTP 200).
+- Pending external acceptance: register the private Custom Web Receiver and LG TV in Cast Console, configure the generated App ID locally, rebuild/install the GMS app, and test the custom receiver on the physical LG.
+- The Cast Console app ID and physical-TV acceptance are still pending; the existing Google Default Receiver test does not verify the custom UI.
