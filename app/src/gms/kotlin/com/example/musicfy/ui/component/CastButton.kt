@@ -60,6 +60,8 @@ fun CastButton(
     val isCasting by castHandler?.isCasting?.collectAsState() ?: remember { mutableStateOf(false) }
     val isConnecting by castHandler?.isConnecting?.collectAsState() ?: remember { mutableStateOf(false) }
     val castDeviceName by castHandler?.castDeviceName?.collectAsState() ?: remember { mutableStateOf(null) }
+    val receiverReady by castHandler?.receiverReady?.collectAsState() ?: remember { mutableStateOf(false) }
+    val receiverViewMode by castHandler?.receiverViewMode?.collectAsState() ?: remember { mutableStateOf("player") }
 
     val currentMetadata by playerConnection?.mediaMetadata?.collectAsState() ?: remember { mutableStateOf(null) }
 
@@ -79,7 +81,7 @@ fun CastButton(
             CastContext.getSharedInstance(context)
             mediaRouter = MediaRouter.getInstance(context)
             routeSelector = MediaRouteSelector.Builder()
-                .addControlCategory(CastMediaControlIntent.categoryForCast(CastMediaControlIntent.DEFAULT_MEDIA_RECEIVER_APPLICATION_ID))
+                .addControlCategory(CastMediaControlIntent.categoryForCast(com.example.musicfy.cast.CastOptionsProvider.receiverApplicationId()))
                 .build()
 
             playerConnection?.service?.castConnectionHandler?.initialize()
@@ -167,7 +169,10 @@ fun CastButton(
                             onDisconnect = {
                                 castHandler?.disconnect()
                                 menuState.dismiss()
-                            }
+                            },
+                            receiverReady = receiverReady,
+                            selectedViewMode = receiverViewMode,
+                            onReceiverViewModeSelected = { mode -> castHandler?.setReceiverViewMode(mode) }
                         )
                     }
                 }

@@ -6,11 +6,15 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.material3.FilterChip
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.CircularProgressIndicator
@@ -33,6 +37,9 @@ fun CastPickerSheet(
     onRouteSelected: (MediaRouter.RouteInfo) -> Unit,
     onDisconnect: () -> Unit,
     currentlyConnectedRoute: MediaRouter.RouteInfo?,
+    receiverReady: Boolean = false,
+    selectedViewMode: String = "player",
+    onReceiverViewModeSelected: (String) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -109,6 +116,36 @@ fun CastPickerSheet(
                     style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.error
                 )
+            }
+
+            if (receiverReady) {
+                Column(modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) {
+                    Text(
+                        text = "TV display",
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        FilterChip(
+                            selected = selectedViewMode == "player",
+                            onClick = { onReceiverViewModeSelected("player") },
+                            label = { Text("Player") }
+                        )
+                        FilterChip(
+                            selected = selectedViewMode == "lyrics",
+                            onClick = { onReceiverViewModeSelected("lyrics") },
+                            label = { Text("Lyrics") }
+                        )
+                        FilterChip(
+                            selected = selectedViewMode == "artwork",
+                            onClick = { onReceiverViewModeSelected("artwork") },
+                            label = { Text("Artwork") }
+                        )
+                    }
+                }
             }
         } else if (routes.isEmpty()) {
 

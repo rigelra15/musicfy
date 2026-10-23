@@ -10,6 +10,7 @@ import com.google.android.gms.cast.framework.SessionProvider
 import com.google.android.gms.cast.framework.media.CastMediaOptions
 import com.google.android.gms.cast.framework.media.MediaIntentReceiver
 import com.google.android.gms.cast.framework.media.NotificationOptions
+import com.example.musicfy.BuildConfig
 
 class CastOptionsProvider : OptionsProvider {
 
@@ -19,10 +20,16 @@ class CastOptionsProvider : OptionsProvider {
             .build()
 
         return CastOptions.Builder()
-            .setReceiverApplicationId(CastMediaControlIntent.DEFAULT_MEDIA_RECEIVER_APPLICATION_ID)
+            .setReceiverApplicationId(receiverApplicationId())
             .setCastMediaOptions(mediaOptions)
             .setStopReceiverApplicationWhenEndingSession(true)
             .build()
+    }
+
+    companion object {
+        fun receiverApplicationId(): String = BuildConfig.CAST_RECEIVER_APPLICATION_ID
+            .takeIf(String::isNotBlank)
+            ?: CastMediaControlIntent.DEFAULT_MEDIA_RECEIVER_APPLICATION_ID
     }
 
     override fun getAdditionalSessionProviders(context: Context): List<SessionProvider>? {

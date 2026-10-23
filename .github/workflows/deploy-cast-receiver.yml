@@ -1,0 +1,60 @@
+name: Deploy Cast Receiver
+
+on:
+  workflow_dispatch:
+    inputs:
+      pages_site_checked:
+        description: Confirmed the existing Pages site can safely be replaced by this artifact
+        required: true
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: musicfy-cast-receiver-pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require Pages replacement review
+        if: ${{ !inputs.pages_site_checked }}
+        run: |
+          echo "Review the repository's current Pages site before allowing this artifact to replace it." >&2
+          exit 1
+      - uses: actions/checkout@v4
+      - uses: actions/configure-pages@v5
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: cast-receiver/package-lock.json
+      - run: npm ci
+        working-directory: cast-receiver
+      - run: npm test && npm run typecheck && npm run build
+        working-directory: cast-receiver
+        env:
+          PAGES_BASE_PATH: /musicfy/cast-receiver/
+      - name: Place receiver at its project Pages path
+        run: |
+          mkdir -p site/cast-receiver
+          cp -R dist/. site/cast-receiver/
+        working-directory: cast-receiver
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: cast-receiver/site
+
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

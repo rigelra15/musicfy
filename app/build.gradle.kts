@@ -64,6 +64,10 @@ extensions.configure<ApplicationExtension> {
 //add nightly build label support
         val isNightly = project.hasProperty("nightly") && project.property("nightly") == "true"
         buildConfigField("Boolean", "IS_NIGHTLY", isNightly.toString())
+        val castReceiverApplicationId = localProperties.getProperty("MUSICFY_CAST_APP_ID")
+            ?: providers.gradleProperty("MUSICFY_CAST_APP_ID").orNull
+            ?: ""
+        buildConfigField("String", "CAST_RECEIVER_APPLICATION_ID", "\"$castReceiverApplicationId\"")
 
         // When this build's code was made (its commit, not the wall clock, so it only changes with the
         // code). The Developer space counts issues, commits and releases since then.
