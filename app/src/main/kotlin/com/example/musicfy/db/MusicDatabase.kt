@@ -58,6 +58,9 @@ class MusicDatabase(
     val speedDialDao: SpeedDialDao
         get() = delegate.speedDialDao
 
+    val transferDao: com.example.musicfy.db.daos.TransferDao
+        get() = delegate.transferDao
+
     /**
      * Pins [item], evicting the oldest pin first if that would push the count past
      * [com.example.musicfy.db.daos.SpeedDialDao.Companion.MaxPinned].
@@ -145,6 +148,7 @@ class MusicDatabase(
 abstract class InternalDatabase : RoomDatabase() {
     abstract val dao: DatabaseDao
     abstract val speedDialDao: SpeedDialDao
+    abstract val transferDao: com.example.musicfy.db.daos.TransferDao
 
     companion object {
         const val DB_NAME = "song.db"

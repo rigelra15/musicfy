@@ -16,6 +16,7 @@ ktor = "3.4.0"
 ksp = "2.3.5"
 jsoup = "1.22.1"
 coil = "3.3.0"
+camerax = "1.4.2"
 ucrop = "2.2.11"
 guava = "33.5.0-jre"
 coroutinesGuava = "1.10.2"
@@ -51,6 +52,11 @@ concurrent-futures = { module = "androidx.concurrent:concurrent-futures-ktx", ve
 
 gradle = { module = "com.android.tools.build:gradle", version.ref = "androidGradlePlugin" }
 activity = { module = "androidx.activity:activity-compose", version.ref = "activity" }
+# Camera preview for scanning the TV's pairing code (no Google Play services, so F-Droid builds keep working)
+camerax-core = { module = "androidx.camera:camera-core", version.ref = "camerax" }
+camerax-camera2 = { module = "androidx.camera:camera-camera2", version.ref = "camerax" }
+camerax-lifecycle = { module = "androidx.camera:camera-lifecycle", version.ref = "camerax" }
+camerax-view = { module = "androidx.camera:camera-view", version.ref = "camerax" }
 hilt-navigation = { module = "androidx.hilt:hilt-navigation-compose", version.ref = "hiltNavigation" }
 datastore = { module = "androidx.datastore:datastore-preferences", version.ref = "datastore" }
 

@@ -415,6 +415,11 @@ dependencies {
     implementation(project(":modules:api"))
     implementation(project(":modules:applemusic"))
     implementation(project(":modules:monochrome"))
+    implementation(project(":modules:tvtransfer"))
+    implementation(libs.camerax.core)
+    implementation(libs.camerax.camera2)
+    implementation(libs.camerax.lifecycle)
+    implementation(libs.camerax.view)
 
 
     implementation(libs.ktor.client.core)

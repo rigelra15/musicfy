@@ -116,6 +116,15 @@ fun ImportSyncScreen(
                     iconShape = CircleShape,
                     onClick = { navController.navigate(ImportTuneMyMusicRoute) },
                 ),
+                SettingsItem(
+                    title = { Text("Transfer to TV") },
+                    highlightKey = "Transfer to TV",
+                    descriptionText = "Send your library to the Musicfy TV app over Wi-Fi",
+                    detail = "Scan the code the TV shows and send your collection, playlists and likes to the Musicfy TV app",
+                    icon = painterResource(R.drawable.cast),
+                    iconShape = CircleShape,
+                    onClick = { navController.navigate(TvTransferRoute) },
+                ),
             ),
         )
 

@@ -400,6 +400,10 @@ fun NavGraphBuilder.navigationBuilder(
         com.example.musicfy.ui.screens.settings.importsync.ImportSyncScreen(navController = navController)
     }
 
+    composable(com.example.musicfy.ui.screens.settings.importsync.TvTransferRoute) {
+        com.example.musicfy.ui.screens.settings.importsync.TvTransferScreen(navController = navController)
+    }
+
     composable(com.example.musicfy.ui.screens.settings.importsync.ImportProvidersRoute) {
         com.example.musicfy.ui.screens.settings.importsync.ImportProvidersScreen(navController = navController)
     }

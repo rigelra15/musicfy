@@ -36,6 +36,7 @@ include(":providers:directlyrics")
 include(":modules:api")
 include(":modules:applemusic")
 include(":modules:monochrome")
+include(":modules:tvtransfer")
 
 
 // local newpipe extractor
