@@ -277,19 +277,22 @@ private fun LabHeader(
             overflow = TextOverflow.Clip,
             softWrap = false,
         )
-        Text(
-            title.second,
-            fontFamily = InterFontFamily,
-            fontWeight = FontWeight.Bold,
-            fontSize = title.secondSize * keep,
-            lineHeight = title.secondSize * keep * 0.92f,
-            letterSpacing = (-0.04).em,
-            color = Color.White,
-            maxLines = 1,
-            overflow = TextOverflow.Clip,
-            softWrap = false,
-            modifier = Modifier.offset(y = (-2).dp),
-        )
+        // a one-word title ("Gesture") has no second line to leave a gap for
+        if (title.second.isNotEmpty()) {
+            Text(
+                title.second,
+                fontFamily = InterFontFamily,
+                fontWeight = FontWeight.Bold,
+                fontSize = title.secondSize * keep,
+                lineHeight = title.secondSize * keep * 0.92f,
+                letterSpacing = (-0.04).em,
+                color = Color.White,
+                maxLines = 1,
+                overflow = TextOverflow.Clip,
+                softWrap = false,
+                modifier = Modifier.offset(y = (-2).dp),
+            )
+        }
         if (subtitle != null) {
             Spacer(Modifier.height(8.dp))
             Text(

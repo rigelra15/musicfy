@@ -51,7 +51,7 @@ import com.example.musicfy.playback.queues.YouTubeQueue
 import com.example.musicfy.ui.component.HomeCardHighlight
 import com.example.musicfy.ui.component.HomeVideoCard
 import com.example.musicfy.ui.component.LocalMenuState
-import com.example.musicfy.ui.component.SwipeActionsBox
+import com.example.musicfy.ui.component.SongSwipeBox
 import com.example.musicfy.ui.component.containerTransformSource
 import com.example.musicfy.ui.component.detail.CreatorUi
 import com.example.musicfy.ui.component.detail.PlaylistDetailScaffold
@@ -273,10 +273,10 @@ fun ArtistItemsScreen(
         when {
             kind == ItemsKind.Songs -> itemsIndexed(rows, key = { _, it -> it.id }, contentType = { _, _ -> "track" }) { position, item ->
                 val song = item as SongItem
-                SwipeActionsBox(
+                SongSwipeBox(
                     modifier = Modifier.animateItem(),
-                    start = { librarySwipeAction(song) },
-                    end = { queueSwipeAction { song.toMediaItem() } },
+                    library = { librarySwipeAction(song) },
+                    queue = { queueSwipeAction { song.toMediaItem() } },
                 ) {
                     PlaylistTrackRow(
                         thumbnailUrl = song.thumbnail,

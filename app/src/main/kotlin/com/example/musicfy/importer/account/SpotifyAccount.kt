@@ -132,6 +132,7 @@ private class SpotifyLibrary(
                     album = track["album"].obj()?.string("name"),
                     durationMs = track.long("duration_ms"),
                     addedAtMs = dateMs(entry.string("added_at")),
+                    sourceId = track.string("id")?.let { "spotify:track:$it" },
                 )
             }
             next = page.string("next")?.takeIf { it.startsWith(API) }
@@ -334,6 +335,7 @@ private object SpotifyWebPlayer {
                             .joinToString(", "),
                         album = element.path("albumOfTrack").obj()?.string("name"),
                         durationMs = (element.path("trackDuration") ?: element.path("duration"))?.obj()?.long("totalMilliseconds"),
+                        sourceId = uri?.takeIf { it.startsWith("spotify:track:") },
                     )
                     return
                 }

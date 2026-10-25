@@ -147,6 +147,7 @@ object LinkImporter {
                 artist = obj.string("subtitle").orEmpty().replace(' ', ' '),
                 album = albumName,
                 durationMs = obj.long("duration"),
+                sourceId = obj.string("uri")?.takeIf { it.startsWith("spotify:track:") },
             )
         }
         if (tracks.isEmpty()) throw LinkImportException("That Spotify $type has no songs we can read.")

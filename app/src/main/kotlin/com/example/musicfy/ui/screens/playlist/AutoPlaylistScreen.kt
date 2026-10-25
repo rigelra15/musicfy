@@ -20,7 +20,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -60,7 +59,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.TextFieldValue
@@ -98,7 +96,7 @@ import com.example.musicfy.ui.component.EmptyPlaceholder
 import com.example.musicfy.ui.component.LikedCover
 import com.example.musicfy.ui.component.LikedCoverColors
 import com.example.musicfy.ui.component.LocalMenuState
-import com.example.musicfy.ui.component.SwipeActionsBox
+import com.example.musicfy.ui.component.SongSwipeBox
 import com.example.musicfy.ui.component.librarySwipeAction
 import com.example.musicfy.ui.component.rememberLikedCoverColors
 import com.example.musicfy.ui.component.queueSwipeAction
@@ -112,6 +110,8 @@ import com.example.musicfy.ui.component.detail.PlaylistSortControl
 import com.example.musicfy.ui.component.detail.PlaylistSearchControl
 import com.example.musicfy.ui.component.detail.PlaylistStatsStyle
 import com.example.musicfy.ui.component.detail.PlaylistTrackBones
+import com.example.musicfy.ui.component.detail.PlaylistModeBar
+import com.example.musicfy.ui.component.detail.PlaylistSelectTick
 import com.example.musicfy.ui.component.detail.PlaylistTrackRow
 import com.example.musicfy.ui.component.detail.playlistCoverHeight
 import com.example.musicfy.ui.component.rememberRevealSeenState
@@ -386,48 +386,39 @@ fun AutoPlaylistScreen(
                 )
             }
         },
-        topBarOverride = if (inSelectMode || isSearching) {
+        topBarOverride = if (isSearching) {
             {
                 AutoPlaylistSearchBar(
-                    inSelectMode = inSelectMode,
-                    isSearching = isSearching,
                     query = query,
                     onQueryChange = { query = it },
                     focusRequester = focusRequester,
-                    selectionCount = selection.size,
-                    allSelected = selection.size == filteredSongs.size && selection.isNotEmpty(),
-                    onToggleSelectAll = {
-                        if (selection.size == filteredSongs.size) {
-                            selection.clear()
-                        } else {
-                            selection.clear()
-                            selection.addAll(filteredSongs.map { it.id })
-                        }
-                    },
-                    onSelectionMenu = {
-                        menuState.show {
-                            SelectionSongMenu(
-                                songSelection = filteredSongs.filter { it.id in selection },
-                                onDismiss = menuState::dismiss,
-                                clearAction = onExitSelectionMode,
-                            )
-                        }
-                    },
                     onBack = {
-                        if (isSearching) {
-                            isSearching = false
-                            query = TextFieldValue()
-                        } else if (inSelectMode) {
-                            onExitSelectionMode()
-                        } else {
-                            navController.navigateUp()
-                        }
-                    },
-                    onBackLong = {
-                        if (!isSearching && !inSelectMode) navController.backToMain()
+                        isSearching = false
+                        query = TextFieldValue()
                     },
                 )
             }
+        } else null,
+        modeBar = if (inSelectMode) {
+            PlaylistModeBar.Select(
+                count = selection.size,
+                allSelected = selection.size == filteredSongs.size && selection.isNotEmpty(),
+                onToggleAll = {
+                    val selectAll = selection.size != filteredSongs.size
+                    selection.clear()
+                    if (selectAll) selection.addAll(filteredSongs.map { it.id })
+                },
+                onMore = {
+                    menuState.show {
+                        SelectionSongMenu(
+                            songSelection = filteredSongs.filter { it.id in selection },
+                            onDismiss = menuState::dismiss,
+                            clearAction = onExitSelectionMode,
+                        )
+                    }
+                },
+                onClose = onExitSelectionMode,
+            )
         } else null,
         overlay = {
             DraggableScrollbar(
@@ -536,11 +527,11 @@ fun AutoPlaylistScreen(
                 if (it) selection.add(song.id) else selection.remove(song.id)
             }
 
-            SwipeActionsBox(
+            SongSwipeBox(
                 modifier = Modifier.animateItem(),
                 enabled = !inSelectMode,
-                start = { librarySwipeAction(song.song) },
-                end = { queueSwipeAction { song.toMediaItem() } },
+                library = { librarySwipeAction(song.song) },
+                queue = { queueSwipeAction { song.toMediaItem() } },
             ) {
                 PlaylistTrackRow(
                     thumbnailUrl = song.song.thumbnailUrl,
@@ -579,8 +570,9 @@ fun AutoPlaylistScreen(
                             )
                         }
                     },
+                    selected = inSelectMode && song.id in selection,
                     trailing = if (inSelectMode) {
-                        { Checkbox(checked = song.id in selection, onCheckedChange = onCheckedChange) }
+                        { PlaylistSelectTick(checked = song.id in selection) }
                     } else null,
                 )
             }
@@ -632,76 +624,45 @@ fun AutoPlaylistScreen(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun AutoPlaylistSearchBar(
-    inSelectMode: Boolean,
-    isSearching: Boolean,
     query: TextFieldValue,
     onQueryChange: (TextFieldValue) -> Unit,
     focusRequester: FocusRequester,
-    selectionCount: Int,
-    allSelected: Boolean,
-    onToggleSelectAll: () -> Unit,
-    onSelectionMenu: () -> Unit,
     onBack: () -> Unit,
-    onBackLong: () -> Unit,
 ) {
     TopAppBar(
+        colors = TopAppBarDefaults.topAppBarColors(
+            containerColor = MaterialTheme.colorScheme.surface,
+        ),
         title = {
-            if (inSelectMode) {
-                Text(
-                    text = pluralStringResource(R.plurals.n_song, selectionCount, selectionCount),
-                    style = MaterialTheme.typography.titleLarge
-                )
-            } else if (isSearching) {
-                TextField(
-                    value = query,
-                    onValueChange = onQueryChange,
-                    placeholder = {
-                        Text(
-                            text = stringResource(R.string.search),
-                            style = MaterialTheme.typography.titleLarge
-                        )
-                    },
-                    singleLine = true,
-                    textStyle = MaterialTheme.typography.titleLarge,
-                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-                    colors = TextFieldDefaults.colors(
-                        focusedContainerColor = Color.Transparent,
-                        unfocusedContainerColor = Color.Transparent,
-                        focusedIndicatorColor = Color.Transparent,
-                        unfocusedIndicatorColor = Color.Transparent,
-                        disabledIndicatorColor = Color.Transparent,
-                    ),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .focusRequester(focusRequester)
-                )
-            }
+            TextField(
+                value = query,
+                onValueChange = onQueryChange,
+                placeholder = {
+                    Text(
+                        text = stringResource(R.string.search),
+                        style = MaterialTheme.typography.titleLarge
+                    )
+                },
+                singleLine = true,
+                textStyle = MaterialTheme.typography.titleLarge,
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                colors = TextFieldDefaults.colors(
+                    focusedContainerColor = Color.Transparent,
+                    unfocusedContainerColor = Color.Transparent,
+                    focusedIndicatorColor = Color.Transparent,
+                    unfocusedIndicatorColor = Color.Transparent,
+                    disabledIndicatorColor = Color.Transparent,
+                ),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .focusRequester(focusRequester)
+            )
         },
         navigationIcon = {
-            com.example.musicfy.ui.component.IconButton(onClick = onBack, onLongClick = onBackLong) {
-                Icon(
-                    painter = painterResource(if (inSelectMode) R.drawable.close else R.drawable.arrow_back_ios),
-                    contentDescription = null
-                )
+            IconButton(onClick = onBack) {
+                Icon(painter = painterResource(R.drawable.arrow_back_ios), contentDescription = null)
             }
         },
-        actions = {
-            if (inSelectMode) {
-                Checkbox(checked = allSelected, onCheckedChange = { onToggleSelectAll() })
-                IconButton(
-                    enabled = selectionCount > 0,
-                    onClick = onSelectionMenu,
-                ) {
-                    Icon(
-                        painter = painterResource(R.drawable.more_vert),
-                        contentDescription = null
-                    )
-                }
-            }
-        },
-        colors = TopAppBarDefaults.topAppBarColors(
-            containerColor = MaterialTheme.colorScheme.surface
-        )
     )
 }
 

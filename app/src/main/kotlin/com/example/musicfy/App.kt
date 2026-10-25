@@ -125,6 +125,14 @@ class App : Application(), SingletonImageLoader.Factory {
                 com.example.musicfy.utils.YTPlayerUtils.preWarmPoToken()
             }
         }
+
+        applicationScope.launch(Dispatchers.IO) {
+            // Local songs whose cover file was cleared away get it back from the song's own file.
+            // After the intro, so it doesn't share the disk with the first frames.
+            com.example.musicfy.ui.launch.LaunchGate.awaitIntro()
+            runCatching { com.example.musicfy.importer.LocalArtwork.repair(this@App, musicDatabase) }
+                .onFailure { Timber.w(it, "Repairing local covers failed") }
+        }
     }
 
     private suspend fun initializeSettings() {
@@ -177,15 +185,17 @@ class App : Application(), SingletonImageLoader.Factory {
         YouTube.useLoginForBrowse = settings[UseLoginForBrowse] ?: true
         YouTube.ipVersion = settings[IpVersionKey]?.toEnum(defaultValue = IpVersion.AUTO) ?: IpVersion.AUTO
 
-        val channel = NotificationChannel(
-            "updates",
-            getString(R.string.update_channel_name),
-            NotificationManager.IMPORTANCE_DEFAULT
-        ).apply {
-            description = getString(R.string.update_channel_desc)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channel = NotificationChannel(
+                "updates",
+                getString(R.string.update_channel_name),
+                NotificationManager.IMPORTANCE_DEFAULT
+            ).apply {
+                description = getString(R.string.update_channel_desc)
+            }
+            val nm = getSystemService(NotificationManager::class.java)
+            nm.createNotificationChannel(channel)
         }
-        val nm = getSystemService(NotificationManager::class.java)
-        nm.createNotificationChannel(channel)
     }
 
     private fun observeSettingsChanges() {

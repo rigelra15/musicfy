@@ -22,13 +22,9 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -50,7 +46,6 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEachReversed
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -67,9 +62,8 @@ import com.example.musicfy.playback.queues.LocalAlbumRadio
 import com.example.musicfy.ui.component.HomeCardHighlight
 import com.example.musicfy.ui.component.HomeCardSpacing
 import com.example.musicfy.ui.component.HomeCoverCard
-import com.example.musicfy.ui.component.IconButton
 import com.example.musicfy.ui.component.LocalMenuState
-import com.example.musicfy.ui.component.SwipeActionsBox
+import com.example.musicfy.ui.component.SongSwipeBox
 import com.example.musicfy.ui.component.detail.CreatorUi
 import com.example.musicfy.ui.component.detail.FeaturedArtistsRow
 import com.example.musicfy.ui.component.detail.PlaylistDetailScaffold
@@ -79,6 +73,8 @@ import com.example.musicfy.ui.component.detail.PlaylistInset
 import com.example.musicfy.ui.component.detail.PlaylistSectionTitle
 import com.example.musicfy.ui.component.detail.PlaylistStatsStyle
 import com.example.musicfy.ui.component.detail.PlaylistTrackBones
+import com.example.musicfy.ui.component.detail.PlaylistModeBar
+import com.example.musicfy.ui.component.detail.PlaylistSelectTick
 import com.example.musicfy.ui.component.detail.PlaylistTrackRow
 import com.example.musicfy.ui.component.detail.featuredArtistsOf
 import com.example.musicfy.ui.component.detail.playlistCoverHeight
@@ -194,31 +190,26 @@ fun AlbumScreen(
                 }
             }
         },
-        topBarOverride = if (inSelectMode) {
-            {
-                AlbumSelectionBar(
-                    selectionCount = selection.size,
-                    allSelected = selection.size == filteredSongs.size && selection.isNotEmpty(),
-                    onToggleSelectAll = {
-                        if (selection.size == filteredSongs.size) {
-                            selection.clear()
-                        } else {
-                            selection.clear()
-                            selection.addAll(filteredSongs.map { it.id })
-                        }
-                    },
-                    onSelectionMenu = {
-                        menuState.show {
-                            SelectionSongMenu(
-                                songSelection = selection.mapNotNull { id -> filteredSongs.find { it.id == id } },
-                                onDismiss = menuState::dismiss,
-                                clearAction = onExitSelectionMode,
-                            )
-                        }
-                    },
-                    onClose = onExitSelectionMode,
-                )
-            }
+        modeBar = if (inSelectMode) {
+            PlaylistModeBar.Select(
+                count = selection.size,
+                allSelected = selection.size == filteredSongs.size && selection.isNotEmpty(),
+                onToggleAll = {
+                    val selectAll = selection.size != filteredSongs.size
+                    selection.clear()
+                    if (selectAll) selection.addAll(filteredSongs.map { it.id })
+                },
+                onMore = {
+                    menuState.show {
+                        SelectionSongMenu(
+                            songSelection = selection.mapNotNull { id -> filteredSongs.find { it.id == id } },
+                            onDismiss = menuState::dismiss,
+                            clearAction = onExitSelectionMode,
+                        )
+                    }
+                },
+                onClose = onExitSelectionMode,
+            )
         } else null,
     ) {
         if (album == null || album.songs.isEmpty()) {
@@ -270,11 +261,11 @@ fun AlbumScreen(
             val onCheckedChange: (Boolean) -> Unit = {
                 if (it) selection.add(song.id) else selection.remove(song.id)
             }
-            SwipeActionsBox(
+            SongSwipeBox(
                 modifier = Modifier.animateItem(),
                 enabled = !inSelectMode,
-                start = { librarySwipeAction(song.song) },
-                end = { queueSwipeAction { song.toMediaItem() } },
+                library = { librarySwipeAction(song.song) },
+                queue = { queueSwipeAction { song.toMediaItem() } },
             ) {
                 PlaylistTrackRow(
                     thumbnailUrl = song.song.thumbnailUrl,
@@ -310,8 +301,9 @@ fun AlbumScreen(
                             SongMenu(originalSong = song, navController = navController, onDismiss = menuState::dismiss)
                         }
                     },
+                    selected = inSelectMode && song.id in selection,
                     trailing = if (inSelectMode) {
-                        { Checkbox(checked = song.id in selection, onCheckedChange = onCheckedChange) }
+                        { PlaylistSelectTick(checked = song.id in selection) }
                     } else null,
                 )
             }
@@ -433,32 +425,6 @@ private fun LazyListScope.albumShelf(
             }
         }
     }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun AlbumSelectionBar(
-    selectionCount: Int,
-    allSelected: Boolean,
-    onToggleSelectAll: () -> Unit,
-    onSelectionMenu: () -> Unit,
-    onClose: () -> Unit,
-) {
-    TopAppBar(
-        title = { Text(pluralStringResource(R.plurals.n_selected, selectionCount, selectionCount)) },
-        navigationIcon = {
-            IconButton(onClick = onClose, onLongClick = {}) {
-                Icon(painter = painterResource(R.drawable.close), contentDescription = null)
-            }
-        },
-        actions = {
-            Checkbox(checked = allSelected, onCheckedChange = { onToggleSelectAll() })
-            IconButton(enabled = selectionCount > 0, onClick = onSelectionMenu, onLongClick = {}) {
-                Icon(painter = painterResource(R.drawable.more_vert), contentDescription = null)
-            }
-        },
-        colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface),
-    )
 }
 
 @Composable

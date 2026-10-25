@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.collectAsState
@@ -29,6 +30,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.text.PlatformTextStyle
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextMeasurer
@@ -39,6 +41,7 @@ import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.LineHeightStyle
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
@@ -60,6 +63,10 @@ internal fun posterType(size: TextUnit, weight: FontWeight = FontWeight.Bold) = 
     platformStyle = PlatformTextStyle(includeFontPadding = false),
     lineHeightStyle = LineHeightStyle(LineHeightStyle.Alignment.Center, LineHeightStyle.Trim.Both),
 )
+
+/** whether [text] reads right to left (Arabic, Hebrew...), judged by its first letter that has a direction */
+internal fun isRtlText(text: CharSequence): Boolean =
+    androidx.core.text.TextDirectionHeuristicsCompat.FIRSTSTRONG_LTR.isRtl(text, 0, text.length)
 
 /**
  * How big each word of a title or line is set: one short word (three letters or more, the first
@@ -83,7 +90,7 @@ internal fun wordScales(words: List<String>): FloatArray {
 
 /**
  * A song title as a poster: mixed sizes ([wordScales]), tight lines, and on every new song the
- * words rise into place one after another.
+ * words rise into place one after another. A right-to-left title runs its words from the right.
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -95,34 +102,98 @@ fun ExpressiveTitle(
 ) {
     val words = remember(text) { text.split(' ').filter { it.isNotBlank() } }
     val scales = remember(words) { wordScales(words) }
-    // long titles come down in size so the poster still fits
-    val fitted = remember(text, baseSize) {
-        val length = text.length.coerceAtLeast(1)
-        baseSize * (14f / length).coerceIn(0.52f, 1f).let { kotlin.math.sqrt(it) }
-    }
+    val rtl = remember(text) { isRtlText(text) }
     val enter = remember(text) { Animatable(0f) }
     LaunchedEffect(text) { enter.animateTo(1f, spring(dampingRatio = 0.78f, stiffness = 180f)) }
-    FlowRow(
-        modifier = modifier,
-        horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(fitted.value.dp * 0.24f),
-        itemVerticalAlignment = Alignment.Bottom,
-    ) {
-        words.forEachIndexed { index, word ->
-            Text(
-                text = word,
-                color = color,
-                style = posterType(fitted * scales[index], if (scales[index] > 1f) FontWeight.Black else FontWeight.Bold),
-                maxLines = 1,
-                softWrap = false,
-                modifier = Modifier.graphicsLayer {
-                    val delay = index * 0.09f
-                    val p = ((enter.value - delay) / (1f - delay).coerceAtLeast(0.2f)).coerceIn(0f, 1f)
-                    translationY = (1f - p) * 30.dp.toPx()
-                    alpha = p
-                },
-            )
+    BoxWithConstraints(modifier) {
+        val measurer = rememberTextMeasurer()
+        val density = LocalDensity.current
+        val maxWidth = constraints.maxWidth
+        val maxHeight = constraints.maxHeight
+        val fitted = remember(text, baseSize, maxWidth, maxHeight, density) {
+            fitTitle(measurer, words, scales, text.length, baseSize, maxWidth, maxHeight, density)
+        }
+        CompositionLocalProvider(LocalLayoutDirection provides if (rtl) LayoutDirection.Rtl else LayoutDirection.Ltr) {
+            FlowRow(
+                horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(fitted.value.dp * TitleSpacing),
+                itemVerticalAlignment = Alignment.Bottom,
+            ) {
+                words.forEachIndexed { index, word ->
+                    Text(
+                        text = word,
+                        color = color,
+                        style = titleWordStyle(fitted, scales[index]),
+                        maxLines = 1,
+                        softWrap = false,
+                        modifier = Modifier.graphicsLayer {
+                            val delay = index * 0.09f
+                            val p = ((enter.value - delay) / (1f - delay).coerceAtLeast(0.2f)).coerceIn(0f, 1f)
+                            translationY = (1f - p) * 30.dp.toPx()
+                            alpha = p
+                        },
+                    )
+                }
+            }
         }
     }
+}
+
+/** the gap between a title's words, as a share of its size */
+private const val TitleSpacing = 0.24f
+
+private fun titleWordStyle(size: TextUnit, scale: Float) =
+    posterType(size * scale, if (scale > 1f) FontWeight.Black else FontWeight.Bold)
+
+/**
+ * The size a title is set at. Long titles start smaller, the way a poster sets them, then step
+ * down until no word runs past [maxWidth] and the rows fit in [maxHeight]. Without this a long
+ * title ran off the side or down over the credits.
+ */
+private fun fitTitle(
+    measurer: TextMeasurer,
+    words: List<String>,
+    scales: FloatArray,
+    length: Int,
+    baseSize: TextUnit,
+    maxWidth: Int,
+    maxHeight: Int,
+    density: androidx.compose.ui.unit.Density,
+): TextUnit {
+    var size = baseSize * kotlin.math.sqrt((14f / length.coerceAtLeast(1)).coerceIn(0.52f, 1f))
+    repeat(8) {
+        if (titleFits(measurer, words, scales, size, maxWidth, maxHeight, density)) return size
+        size *= 0.9f
+    }
+    return size
+}
+
+/** whether the title's words, wrapped the way its FlowRow wraps them, fit the box */
+private fun titleFits(
+    measurer: TextMeasurer,
+    words: List<String>,
+    scales: FloatArray,
+    size: TextUnit,
+    maxWidth: Int,
+    maxHeight: Int,
+    density: androidx.compose.ui.unit.Density,
+): Boolean {
+    val spacing = with(density) { (size.value * TitleSpacing).dp.toPx() }
+    var rowWidth = 0f
+    var rowHeight = 0f
+    var total = 0f
+    words.forEachIndexed { i, word ->
+        val layout = measurer.measure(word, titleWordStyle(size, scales[i]), maxLines = 1, softWrap = false, constraints = Constraints())
+        val w = layout.size.width.toFloat()
+        if (w > maxWidth) return false
+        if (rowWidth > 0f && rowWidth + spacing + w > maxWidth) {
+            total += rowHeight
+            rowWidth = 0f
+            rowHeight = 0f
+        }
+        rowWidth += (if (rowWidth > 0f) spacing else 0f) + w
+        rowHeight = max(rowHeight, layout.size.height.toFloat())
+    }
+    return total + rowHeight <= maxHeight
 }
 
 // ---- lyrics ------------------------------------------------------------------------------
@@ -172,15 +243,22 @@ private const val RiseSpanChars = 3.2f
 /** after its last word a line flies off this soon when a long instrumental gap follows */
 private const val GapExitDelayMs = 450L
 
-/** which side a line sits on: the lead voice left, the answering voice right, both together centred */
-private enum class LineSide { START, CENTER, END }
+/**
+ * Which side a line sits on. The lead voice takes the side the song's words start from (the left,
+ * or the right for a right-to-left song), the answering voice the other side, both together the
+ * middle.
+ */
+private enum class LineSide { LEFT, CENTER, RIGHT }
 
-private fun sideOf(entry: LyricsEntry, duet: Boolean): LineSide = when {
-    !duet -> LineSide.START
-    entry.agent == "v2" -> LineSide.END
-    entry.agent == "v1000" -> LineSide.CENTER
-    else -> LineSide.START
+private fun sideOf(entry: LyricsEntry, duet: Boolean, rtl: Boolean): LineSide {
+    if (duet && entry.agent == "v1000") return LineSide.CENTER
+    val answering = duet && entry.agent == "v2"
+    return if (answering != rtl) LineSide.RIGHT else LineSide.LEFT
 }
+
+/** a song whose lines mostly read right to left: they all sit on the right, so none jump sides */
+private fun readsRightToLeft(lines: List<LyricsEntry>): Boolean =
+    lines.count { isRtlText(it.text) } * 2 > lines.size
 
 /**
  * One word of a line, measured once at the size it peaks at: an emphasised word is measured big
@@ -202,7 +280,55 @@ private class WordCell(
     val charStart: Int,
     /** room round the word's layer for its rise, zoom, glow and blur */
     val bleed: Float,
+    /** read right to left, so it lights from the right. Always one piece (see [letterBounds]) */
+    val rtl: Boolean,
 )
+
+/**
+ * Where [word] can be pulled apart into letters that move on their own: between its grapheme
+ * clusters (so an accent or an emoji stays whole), or nowhere for a joined or right-to-left
+ * script. Drawn one at a time, Arabic letters lost their joins and came out as loose shapes.
+ */
+private fun letterBounds(word: String, graphemes: java.text.BreakIterator): IntArray {
+    if (word.isEmpty() || !com.example.musicfy.ui.player.splitsIntoLetters(word, 0, word.length)) {
+        return intArrayOf(0, word.length)
+    }
+    graphemes.setText(word)
+    val bounds = ArrayList<Int>(word.length + 1)
+    var at = graphemes.first()
+    while (at != java.text.BreakIterator.DONE) {
+        bounds += at
+        at = graphemes.next()
+    }
+    return bounds.toIntArray()
+}
+
+/**
+ * The order a line's words sit in from left to right, row by row, as indexes into [words]. A
+ * right-to-left line puts its first word on the right; a run in the other direction inside it (a
+ * Latin name in an Arabic line, say) still reads its own way.
+ */
+private fun visualOrder(words: List<TimedWord>, rows: IntArray): IntArray {
+    val order = IntArray(words.size) { it }
+    val joined = words.joinToString(" ") { it.text }
+    if (!java.text.Bidi.requiresBidi(joined.toCharArray(), 0, joined.length)) return order
+    val bidi = java.text.Bidi(joined, java.text.Bidi.DIRECTION_DEFAULT_LEFT_TO_RIGHT)
+    val levels = ByteArray(words.size)
+    var offset = 0
+    words.forEachIndexed { i, w ->
+        levels[i] = bidi.getLevelAt(offset).toByte()
+        offset += w.text.length + 1
+    }
+    val boxed = Array<Any>(words.size) { it }
+    var start = 0
+    while (start < words.size) {
+        var end = start
+        while (end < words.size && rows[end] == rows[start]) end++
+        java.text.Bidi.reorderVisually(levels, start, boxed, start, end - start)
+        start = end
+    }
+    return IntArray(words.size) { boxed[it] as Int }
+}
 
 /** a line under the sung one: how it's said (romanised), or what it means (translated) */
 private class SubCell(val layout: TextLayoutResult, val alpha: Float, val bleed: Float)
@@ -221,6 +347,8 @@ private class LineCells(
     val side: LineSide,
     val subs: List<SubCell>,
     val subGapPx: Float,
+    /** each row's words left to right, from [visualOrder] */
+    val visual: IntArray = IntArray(words.size) { it },
 ) {
     val chars = words.sumOf { it.letters.size }
     val x = FloatArray(words.size)
@@ -254,12 +382,13 @@ private class LineCells(
                 j++
             }
             var cx = when (side) {
-                LineSide.START -> 0f
+                LineSide.LEFT -> 0f
                 LineSide.CENTER -> (maxWidth - rowWidth) / 2f
-                LineSide.END -> maxWidth - rowWidth
+                LineSide.RIGHT -> maxWidth - rowWidth
             }
             // mixed sizes share a baseline
-            for (k in i until j) {
+            for (p in i until j) {
+                val k = visual[p]
                 val w = words[k]
                 x[k] = cx
                 y[k] = rowTop + baseline - w.baseline * scale[k]
@@ -341,10 +470,12 @@ private fun measureLine(
 
     // the sub lines first: whatever room they take, the sung line has the rest
     val subPx = (basePx * 0.3f).coerceIn(with(density) { 13.sp.toPx() }, with(density) { 19.sp.toPx() })
+    // by the side the line is on, not by the sub line's own direction: an English translation
+    // under an Arabic line sits on the right with it
     val align = when (side) {
-        LineSide.START -> TextAlign.Start
+        LineSide.LEFT -> TextAlign.Left
         LineSide.CENTER -> TextAlign.Center
-        LineSide.END -> TextAlign.End
+        LineSide.RIGHT -> TextAlign.Right
     }
     val subWidth = maxWidth.roundToInt().coerceAtLeast(1)
     val subs = listOfNotNull(reading?.let { it to 0.74f }, translation?.let { it to 0.56f }).map { (text, alpha) ->
@@ -400,13 +531,19 @@ private fun measureLine(
         total += rowHeight
         if ((widest <= maxWidth && total <= lineHeightBudget) || attempt >= 10) {
             var charStart = 0
+            val graphemes = java.text.BreakIterator.getCharacterInstance()
             val cells = words.mapIndexed { i, w ->
                 val whole = wholes[i]
                 val st = style(i, base)
-                val letters = Array(w.text.length) { k ->
-                    measurer.measure(w.text[k].toString(), st, maxLines = 1, softWrap = false, constraints = Constraints())
+                val bounds = letterBounds(w.text, graphemes)
+                val pieces = bounds.size - 1
+                val letters = if (pieces == 1) arrayOf(whole) else Array(pieces) { k ->
+                    measurer.measure(w.text.substring(bounds[k], bounds[k + 1]), st, maxLines = 1, softWrap = false, constraints = Constraints())
                 }
-                val letterX = FloatArray(w.text.length) { k -> whole.getHorizontalPosition(k, usePrimaryDirection = true) }
+                // a whole word starts at its own left edge, whichever way it reads
+                val letterX = if (pieces == 1) FloatArray(1) else FloatArray(pieces) { k ->
+                    whole.getHorizontalPosition(bounds[k], usePrimaryDirection = true)
+                }
                 val sizePx = base * scales[i]
                 WordCell(
                     word = w,
@@ -420,9 +557,10 @@ private fun measureLine(
                     row = rows[i],
                     charStart = charStart,
                     bleed = sizePx * 0.45f + with(density) { 14.dp.toPx() },
-                ).also { charStart += w.text.length }
+                    rtl = pieces == 1 && isRtlText(w.text),
+                ).also { charStart += pieces }
             }
-            return LineCells(cells, space, maxWidth, side, subs, subGap)
+            return LineCells(cells, space, maxWidth, side, subs, subGap, visualOrder(words, rows))
         }
         base *= 0.88f
         attempt++
@@ -442,17 +580,17 @@ private fun enterTimes(lines: List<LyricsEntry>): LongArray = LongArray(lines.si
 /** an instrumental gap: the dots count down from [startMs] to [endMs], on the side of the voice to come */
 private class Interlude(val startMs: Long, val endMs: Long, val afterIndex: Int, val side: LineSide)
 
-private fun interludesOf(lines: List<LyricsEntry>, ends: LongArray, enterAts: LongArray, duet: Boolean): List<Interlude> {
+private fun interludesOf(lines: List<LyricsEntry>, ends: LongArray, enterAts: LongArray, duet: Boolean, rtl: Boolean): List<Interlude> {
     if (lines.isEmpty()) return emptyList()
     val gaps = ArrayList<Interlude>()
     if (lines[0].time >= MinInterludeGapMs) {
-        gaps += Interlude(300L, enterAts[0], -1, sideOf(lines[0], duet))
+        gaps += Interlude(300L, enterAts[0], -1, sideOf(lines[0], duet, rtl))
     }
     for (i in 0 until lines.lastIndex) {
         val next = i + 1
         if (lines[next].time - ends[i] >= MinInterludeGapMs) {
             val start = ends[i] + GapExitDelayMs + 250L
-            if (enterAts[next] - start > 1_500L) gaps += Interlude(start, enterAts[next], i, sideOf(lines[next], duet))
+            if (enterAts[next] - start > 1_500L) gaps += Interlude(start, enterAts[next], i, sideOf(lines[next], duet, rtl))
         }
     }
     return gaps
@@ -490,7 +628,9 @@ private fun readingOf(roman: String?, ruby: List<com.example.musicfy.lyrics.Ruby
  *
  * Like the lyrics page: in a duet the lead voice's lines sit on the left and the answering voice's
  * on the right; the pronunciation and the translation sit under the line when there are any; and a
- * long instrumental gap (or intro) is counted down by the three dots.
+ * long instrumental gap (or intro) is counted down by the three dots. A right-to-left song (Arabic,
+ * Hebrew) is mirrored: its lines sit on the right, words run from the right, and joined words are
+ * kept whole so their letters stay connected.
  *
  * A new line comes in word after word - fading in, sharpening out of a blur, rising into place -
  * while the line before it flies up and blurs away. All of it is worked out from the playback time
@@ -510,13 +650,14 @@ fun ExpressiveLyrics(
     val density = LocalDensity.current
     // only a song with more than one voice puts lines on both sides
     val duet = remember(lines) { lines.map { it.agent ?: "v1" }.distinct().size > 1 }
+    val rtl = remember(lines) { readsRightToLeft(lines) }
     val enterAts = remember(lines) { enterTimes(lines) }
     val ends = remember(lines) {
         LongArray(lines.size) { i ->
             timedWords(lines[i], lines.getOrNull(i + 1)?.time).lastOrNull()?.endMs ?: lines[i].time
         }
     }
-    val interludes = remember(lines, ends, enterAts, duet) { interludesOf(lines, ends, enterAts, duet) }
+    val interludes = remember(lines, ends, enterAts, duet, rtl) { interludesOf(lines, ends, enterAts, duet, rtl) }
     // a line still being sung when the next one comes in: the two show together, stacked
     val overlaps = remember(lines, ends, enterAts) {
         BooleanArray(lines.size) { i -> i < lines.lastIndex && ends[i] - 100L > enterAts[i + 1] }
@@ -575,7 +716,7 @@ fun ExpressiveLyrics(
                 val budget = if (shared) (heightPx * 0.94f - stackGapPx) / 2f else heightPx * 0.94f
                 measureLine(
                     measurer, lines[index], lines.getOrNull(index + 1)?.time, widthPx, budget, basePx,
-                    density, color, sideOf(lines[index], duet), reading, translation,
+                    density, color, sideOf(lines[index], duet, rtl), reading, translation,
                 )
             }
         // the next line is measured a frame after this one lands, never on the frame it's needed
@@ -658,9 +799,9 @@ private fun InterludeRow(gap: Interlude, position: LivePosition, color: Color, b
     val provider = remember(position) { { position.positionMs() } }
     val scale = (baseSize.value / 30f).coerceIn(1f, 1.8f)
     val origin = when (gap.side) {
-        LineSide.START -> 0f
+        LineSide.LEFT -> 0f
         LineSide.CENTER -> 0.5f
-        LineSide.END -> 1f
+        LineSide.RIGHT -> 1f
     }
     com.example.musicfy.ui.player.LyricsInterludeDots(
         startMs = gap.startMs,
@@ -669,9 +810,9 @@ private fun InterludeRow(gap: Interlude, position: LivePosition, color: Color, b
         accentColor = color,
         visible = visible,
         alignment = when (gap.side) {
-            LineSide.START -> com.example.musicfy.ui.player.LyricsAlignment.START
+            LineSide.LEFT -> com.example.musicfy.ui.player.LyricsAlignment.START
             LineSide.CENTER -> com.example.musicfy.ui.player.LyricsAlignment.CENTER
-            LineSide.END -> com.example.musicfy.ui.player.LyricsAlignment.END
+            LineSide.RIGHT -> com.example.musicfy.ui.player.LyricsAlignment.END
         },
         modifier = Modifier
             .graphicsLayer {
@@ -831,16 +972,17 @@ private fun DrawScope.drawWord(cell: WordCell, scale: Float, head: Float, t: Lon
                 when {
                     lx + lw <= litFrom -> drawText(layout, color = color, shadow = shadow)
                     lx >= front -> drawText(layout, color = dim, shadow = Shadow.None)
-                    else -> drawText(
-                        layout,
-                        brush = Brush.horizontalGradient(
-                            0f to color,
-                            1f to dim,
-                            startX = litFrom - lx,
-                            endX = front - lx,
-                        ),
-                        shadow = shadow,
-                    )
+                    else -> {
+                        // the lit edge is measured from where the word starts reading, so a
+                        // right-to-left word (always one piece) lights from its right edge
+                        val litX = if (cell.rtl) cell.width - litFrom - lx else litFrom - lx
+                        val frontX = if (cell.rtl) cell.width - front - lx else front - lx
+                        drawText(
+                            layout,
+                            brush = Brush.horizontalGradient(0f to color, 1f to dim, startX = litX, endX = frontX),
+                            shadow = shadow,
+                        )
+                    }
                 }
             }
         }

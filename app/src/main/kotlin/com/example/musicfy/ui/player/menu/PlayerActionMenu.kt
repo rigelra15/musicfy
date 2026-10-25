@@ -112,6 +112,7 @@ fun PlayerActionMenu(
     var showLyricsEditor by remember { mutableStateOf(false) }
     var showLyricsProvider by remember { mutableStateOf(false) }
     var showLyricsTranslation by remember { mutableStateOf(false) }
+    var showLyricsOffset by remember { mutableStateOf(false) }
 
     // Only touched by the lyrics section. hiltViewModel() itself is cheap, but the flows are
     // collected lazily so a menu opened from the player does no lyrics work at all.
@@ -213,6 +214,14 @@ fun PlayerActionMenu(
                         icon = R.drawable.lyrics,
                         title = "Lyrics provider",
                         onClick = { showLyricsProvider = true },
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    MenuRow(
+                        icon = R.drawable.fast_forward,
+                        title = "Lyrics offset",
+                        onClick = { showLyricsOffset = true },
                     )
 
                     Spacer(modifier = Modifier.height(8.dp))
@@ -349,6 +358,9 @@ fun PlayerActionMenu(
     }
     if (showLyricsProvider) {
         LyricsProviderSheet(onDismiss = { showLyricsProvider = false })
+    }
+    if (showLyricsOffset) {
+        LyricsOffsetSheet(onDismiss = { showLyricsOffset = false })
     }
     if (showLyricsTranslation) {
         LyricsTranslationSheet(onDismiss = { showLyricsTranslation = false })

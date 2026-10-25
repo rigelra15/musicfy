@@ -10,6 +10,7 @@ import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -66,6 +67,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -255,6 +257,8 @@ fun PlaylistDetailScaffold(
     showCover: Boolean = true,
     contentPadding: PaddingValues = PaddingValues(),
     topBarOverride: (@Composable () -> Unit)? = null,
+    /** picking songs or editing the order: the bar swaps its buttons but keeps its glass */
+    modeBar: PlaylistModeBar? = null,
     overlay: @Composable BoxScope.() -> Unit = {},
     /**
      * how far the list scrolls before the top bar turns to glass. the cover band by default; a
@@ -318,6 +322,9 @@ fun PlaylistDetailScaffold(
     }
     val glassState = remember { GlassState() }
     val scope = rememberCoroutineScope()
+    // the Edit order pill is frosted even with the cover still showing, so the glass has to run
+    // before the bar collapses
+    val pillNeedsGlass = rememberUpdatedState(modeBar is PlaylistModeBar.EditOrder)
 
     Box(
         modifier = Modifier
@@ -349,7 +356,7 @@ fun PlaylistDetailScaffold(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .glassRoot(glassState, isActive = { morph.value > 0.01f })
+                .glassRoot(glassState, isActive = { morph.value > 0.01f || pillNeedsGlass.value })
         ) {
             if (showCover) {
                 PlaylistCoverBackdrop(
@@ -383,6 +390,7 @@ fun PlaylistDetailScaffold(
                 onMoreClick = onMoreClick,
                 onMiniCoverClick = { scope.launch { lazyListState.animateScrollToItem(0) } },
                 roundCapsule = roundCapsule,
+                mode = modeBar,
             )
         }
 
@@ -502,9 +510,16 @@ private fun PlaylistTopBar(
     onMoreClick: (() -> Unit)?,
     onMiniCoverClick: () -> Unit,
     roundCapsule: Boolean = false,
+    mode: PlaylistModeBar? = null,
 ) {
     val showChrome by remember { derivedStateOf { morph() > 0.01f } }
     val statusBarTop = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
+    val barModifier = Modifier
+        .fillMaxWidth()
+        .statusBarsPadding()
+        .padding(top = 6.dp)
+        .height(47.dp)
+        .padding(start = 26.dp, end = 30.dp)
 
     Box(modifier = Modifier.fillMaxWidth()) {
         if (showChrome) {
@@ -523,47 +538,96 @@ private fun PlaylistTopBar(
             )
         }
 
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier
-                .fillMaxWidth()
-                .statusBarsPadding()
-                .padding(top = 6.dp)
-                .height(47.dp)
-                .padding(start = 26.dp, end = 30.dp)
-        ) {
-            BackPill(
-                morph = morph,
-                glassState = glassState,
-                coverUrl = coverUrl,
-                cover = cover,
-                tint = background.value,
-                onBackClick = onBackClick,
-                onBackLongClick = onBackLongClick,
-                onMiniCoverClick = onMiniCoverClick,
-                round = roundCapsule,
-            )
-            Spacer(Modifier.weight(1f))
-            if (onMoreClick != null) {
-                Box(
-                    contentAlignment = Alignment.Center,
-                    modifier = Modifier
-                        .size(30.dp)
-                        .clip(CircleShape)
-                        .drawBehind {
-                            val m = morph().coerceIn(0f, 1f)
-                            drawCircle(Color.Black.copy(alpha = 0.28f * (1f - m)))
-                            drawCircle(Color.White.copy(alpha = 0.18f * m))
-                        }
-                        .clickable(onClick = onMoreClick)
-                ) {
-                    Icon(
-                        painter = painterResource(R.drawable.more_horiz),
-                        contentDescription = "Options",
-                        tint = Color.White,
-                        modifier = Modifier.size(18.dp),
-                    )
-                }
+        // keyed on the kind of mode only: a new count or a new lambda updates the bar in place,
+        // only going in or out of a mode plays the swap
+        AnimatedContent(
+            targetState = mode,
+            contentKey = { it?.javaClass },
+            transitionSpec = {
+                (fadeIn(tween(180, delayMillis = 60)) + slideInVertically(spring(dampingRatio = 0.8f, stiffness = 500f)) { -it / 3 })
+                    .togetherWith(fadeOut(tween(110)) + slideOutVertically(tween(160)) { -it / 4 })
+                    .using(SizeTransform(clip = false))
+            },
+            label = "playlistTopBarMode",
+        ) { shownMode ->
+            if (shownMode != null) {
+                PlaylistModeBarRow(
+                    mode = shownMode,
+                    glassState = glassState,
+                    coverUrl = coverUrl,
+                    cover = cover,
+                    tint = background.value,
+                    modifier = barModifier,
+                )
+            } else {
+                PlaylistNormalBarRow(
+                    modifier = barModifier,
+                    morph = morph,
+                    glassState = glassState,
+                    coverUrl = coverUrl,
+                    cover = cover,
+                    background = background,
+                    onBackClick = onBackClick,
+                    onBackLongClick = onBackLongClick,
+                    onMoreClick = onMoreClick,
+                    onMiniCoverClick = onMiniCoverClick,
+                    roundCapsule = roundCapsule,
+                )
+            }
+        }
+    }
+}
+
+/** back (with the mini cover once collapsed) on the left, the dots on the right */
+@Composable
+private fun PlaylistNormalBarRow(
+    modifier: Modifier,
+    morph: () -> Float,
+    glassState: GlassState,
+    coverUrl: String?,
+    cover: (@Composable (Modifier) -> Unit)?,
+    background: State<Color>,
+    onBackClick: () -> Unit,
+    onBackLongClick: () -> Unit,
+    onMoreClick: (() -> Unit)?,
+    onMiniCoverClick: () -> Unit,
+    roundCapsule: Boolean,
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = modifier,
+    ) {
+        BackPill(
+            morph = morph,
+            glassState = glassState,
+            coverUrl = coverUrl,
+            cover = cover,
+            tint = background.value,
+            onBackClick = onBackClick,
+            onBackLongClick = onBackLongClick,
+            onMiniCoverClick = onMiniCoverClick,
+            round = roundCapsule,
+        )
+        Spacer(Modifier.weight(1f))
+        if (onMoreClick != null) {
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier
+                    .size(30.dp)
+                    .clip(CircleShape)
+                    .drawBehind {
+                        val m = morph().coerceIn(0f, 1f)
+                        drawCircle(Color.Black.copy(alpha = 0.28f * (1f - m)))
+                        drawCircle(Color.White.copy(alpha = 0.18f * m))
+                    }
+                    .clickable(onClick = onMoreClick)
+            ) {
+                Icon(
+                    painter = painterResource(R.drawable.more_horiz),
+                    contentDescription = "Options",
+                    tint = Color.White,
+                    modifier = Modifier.size(18.dp),
+                )
             }
         }
     }
@@ -1112,11 +1176,15 @@ fun PlaylistTrackRow(
     coverModifier: Modifier = Modifier,
     /** a song's id: marks the row when the song is downloaded or an imported file */
     songId: String? = null,
+    /** picked while selecting: the row sits on a soft band */
+    selected: Boolean = false,
 ) {
+    val band by animateFloatAsState(if (selected) 1f else 0f, tween(180), label = "selectedBand")
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = modifier
             .fillMaxWidth()
+            .selectedRowBand { band }
             .combinedClickable(
                 interactionSource = null,
                 indication = TrackHighlight,

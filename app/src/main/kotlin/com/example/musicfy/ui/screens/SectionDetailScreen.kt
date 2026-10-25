@@ -38,7 +38,7 @@ import com.example.musicfy.extensions.toMediaItem
 import com.example.musicfy.models.toMediaMetadata
 import com.example.musicfy.playback.queues.ListQueue
 import com.example.musicfy.ui.component.LocalMenuState
-import com.example.musicfy.ui.component.SwipeActionsBox
+import com.example.musicfy.ui.component.SongSwipeBox
 import com.example.musicfy.ui.component.containerTransformSource
 import com.example.musicfy.ui.component.detail.FeaturedArtistUi
 import com.example.musicfy.ui.component.detail.FeaturedArtistsRow
@@ -278,17 +278,17 @@ fun SectionDetailScreen(
                     onMenuClick = { showMenu(item) },
                 )
             }
-            // songs slide like everywhere else: right into the library, left onto the queue
+            // songs slide like everywhere else: into the library or onto the queue, as set in Settings > Gesture
             when (item) {
-                is Song -> SwipeActionsBox(
+                is Song -> SongSwipeBox(
                     modifier = Modifier.animateItem(),
-                    start = { librarySwipeAction(item.song) },
-                    end = { queueSwipeAction { item.toMediaItem() } },
+                    library = { librarySwipeAction(item.song) },
+                    queue = { queueSwipeAction { item.toMediaItem() } },
                 ) { row() }
-                is SongItem -> SwipeActionsBox(
+                is SongItem -> SongSwipeBox(
                     modifier = Modifier.animateItem(),
-                    start = { librarySwipeAction(item) },
-                    end = { queueSwipeAction { item.toMediaMetadata().toMediaItem() } },
+                    library = { librarySwipeAction(item) },
+                    queue = { queueSwipeAction { item.toMediaMetadata().toMediaItem() } },
                 ) { row() }
                 else -> androidx.compose.foundation.layout.Box(modifier = Modifier.animateItem()) { row() }
             }

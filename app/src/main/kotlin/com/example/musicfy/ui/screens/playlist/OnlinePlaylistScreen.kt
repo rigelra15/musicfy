@@ -23,7 +23,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -57,7 +56,6 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.TextFieldValue
@@ -77,7 +75,7 @@ import com.example.musicfy.playback.queues.YouTubeQueue
 import androidx.compose.material3.IconButton
 import com.example.musicfy.extensions.toMediaItem
 import com.example.musicfy.ui.component.LocalMenuState
-import com.example.musicfy.ui.component.SwipeActionsBox
+import com.example.musicfy.ui.component.SongSwipeBox
 import com.example.musicfy.ui.component.HomeCardHighlight
 import com.example.musicfy.ui.component.HomeCardSpacing
 import com.example.musicfy.ui.component.HomeCoverCard
@@ -93,6 +91,8 @@ import com.example.musicfy.ui.component.detail.PlaylistEndOfLine
 import com.example.musicfy.ui.component.detail.PlaylistHeader
 import com.example.musicfy.ui.component.detail.PlaylistSectionTitle
 import com.example.musicfy.ui.component.detail.PlaylistTrackBones
+import com.example.musicfy.ui.component.detail.PlaylistModeBar
+import com.example.musicfy.ui.component.detail.PlaylistSelectTick
 import com.example.musicfy.ui.component.detail.PlaylistTrackRow
 import com.example.musicfy.ui.component.rememberRevealSeenState
 import com.example.musicfy.ui.component.revealOnAppear
@@ -236,48 +236,39 @@ fun OnlinePlaylistScreen(
                 }
             }
         },
-        topBarOverride = if (inSelectMode || isSearching) {
+        topBarOverride = if (isSearching) {
             {
                 OnlinePlaylistSearchBar(
-                    inSelectMode = inSelectMode,
-                    isSearching = isSearching,
                     query = query,
                     onQueryChange = { query = it },
                     focusRequester = focusRequester,
-                    selectionCount = selection.size,
-                    allSelected = selection.size == filteredSongs.size && selection.isNotEmpty(),
-                    onToggleSelectAll = {
-                        if (selection.size == filteredSongs.size) {
-                            selection.clear()
-                        } else {
-                            selection.clear()
-                            selection.addAll(filteredSongs.map { it.second.id })
-                        }
-                    },
-                    onSelectionMenu = {
-                        menuState.show {
-                            YouTubeSelectionSongMenu(
-                                songSelection = filteredSongs.filter { it.second.id in selection }.map { it.second },
-                                onDismiss = menuState::dismiss,
-                                clearAction = onExitSelectionMode
-                            )
-                        }
-                    },
                     onBack = {
-                        if (isSearching) {
-                            isSearching = false
-                            query = TextFieldValue()
-                        } else if (inSelectMode) {
-                            onExitSelectionMode()
-                        } else {
-                            navController.navigateUp()
-                        }
-                    },
-                    onBackLong = {
-                        if (!isSearching && !inSelectMode) navController.backToMain()
+                        isSearching = false
+                        query = TextFieldValue()
                     },
                 )
             }
+        } else null,
+        modeBar = if (inSelectMode) {
+            PlaylistModeBar.Select(
+                count = selection.size,
+                allSelected = selection.size == filteredSongs.size && selection.isNotEmpty(),
+                onToggleAll = {
+                    val selectAll = selection.size != filteredSongs.size
+                    selection.clear()
+                    if (selectAll) selection.addAll(filteredSongs.map { it.second.id })
+                },
+                onMore = {
+                    menuState.show {
+                        YouTubeSelectionSongMenu(
+                            songSelection = filteredSongs.filter { it.second.id in selection }.map { it.second },
+                            onDismiss = menuState::dismiss,
+                            clearAction = onExitSelectionMode
+                        )
+                    }
+                },
+                onClose = onExitSelectionMode,
+            )
         } else null,
         overlay = {
             SnackbarHost(
@@ -346,11 +337,11 @@ fun OnlinePlaylistScreen(
                 if (it) selection.add(songItem.id) else selection.remove(songItem.id)
             }
 
-            SwipeActionsBox(
+            SongSwipeBox(
                 modifier = Modifier.animateItem(),
                 enabled = !inSelectMode,
-                start = { librarySwipeAction(songItem) },
-                end = { queueSwipeAction { songItem.toMediaItem() } },
+                library = { librarySwipeAction(songItem) },
+                queue = { queueSwipeAction { songItem.toMediaItem() } },
             ) {
                 PlaylistTrackRow(
                     thumbnailUrl = songItem.thumbnail,
@@ -393,8 +384,9 @@ fun OnlinePlaylistScreen(
                             YouTubeSongMenu(songItem, navController, menuState::dismiss)
                         }
                     },
+                    selected = inSelectMode && songItem.id in selection,
                     trailing = if (inSelectMode) {
-                        { Checkbox(checked = songItem.id in selection, onCheckedChange = onCheckedChange) }
+                        { PlaylistSelectTick(checked = songItem.id in selection) }
                     } else null,
                 )
             }
@@ -523,75 +515,44 @@ internal fun playlistStats(songCountText: String, totalSeconds: Int): String {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun OnlinePlaylistSearchBar(
-    inSelectMode: Boolean,
-    isSearching: Boolean,
     query: TextFieldValue,
     onQueryChange: (TextFieldValue) -> Unit,
     focusRequester: FocusRequester,
-    selectionCount: Int,
-    allSelected: Boolean,
-    onToggleSelectAll: () -> Unit,
-    onSelectionMenu: () -> Unit,
     onBack: () -> Unit,
-    onBackLong: () -> Unit,
 ) {
     TopAppBar(
         colors = TopAppBarDefaults.topAppBarColors(
             containerColor = MaterialTheme.colorScheme.surface,
         ),
         title = {
-            if (inSelectMode) {
-                Text(
-                    text = pluralStringResource(R.plurals.n_song, selectionCount, selectionCount),
-                    style = MaterialTheme.typography.titleLarge
-                )
-            } else if (isSearching) {
-                TextField(
-                    value = query,
-                    onValueChange = onQueryChange,
-                    placeholder = {
-                        Text(
-                            text = stringResource(R.string.search),
-                            style = MaterialTheme.typography.titleLarge
-                        )
-                    },
-                    singleLine = true,
-                    textStyle = MaterialTheme.typography.titleLarge,
-                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-                    colors = TextFieldDefaults.colors(
-                        focusedContainerColor = Color.Transparent,
-                        unfocusedContainerColor = Color.Transparent,
-                        focusedIndicatorColor = Color.Transparent,
-                        unfocusedIndicatorColor = Color.Transparent,
-                        disabledIndicatorColor = Color.Transparent,
-                    ),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .focusRequester(focusRequester)
-                )
-            }
+            TextField(
+                value = query,
+                onValueChange = onQueryChange,
+                placeholder = {
+                    Text(
+                        text = stringResource(R.string.search),
+                        style = MaterialTheme.typography.titleLarge
+                    )
+                },
+                singleLine = true,
+                textStyle = MaterialTheme.typography.titleLarge,
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                colors = TextFieldDefaults.colors(
+                    focusedContainerColor = Color.Transparent,
+                    unfocusedContainerColor = Color.Transparent,
+                    focusedIndicatorColor = Color.Transparent,
+                    unfocusedIndicatorColor = Color.Transparent,
+                    disabledIndicatorColor = Color.Transparent,
+                ),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .focusRequester(focusRequester)
+            )
         },
         navigationIcon = {
-            com.example.musicfy.ui.component.IconButton(onClick = onBack, onLongClick = onBackLong) {
-                Icon(
-                    painter = painterResource(if (inSelectMode) R.drawable.close else R.drawable.arrow_back_ios),
-                    contentDescription = null
-                )
+            IconButton(onClick = onBack) {
+                Icon(painter = painterResource(R.drawable.arrow_back_ios), contentDescription = null)
             }
         },
-        actions = {
-            if (inSelectMode) {
-                Checkbox(checked = allSelected, onCheckedChange = { onToggleSelectAll() })
-                IconButton(
-                    enabled = selectionCount > 0,
-                    onClick = onSelectionMenu
-                ) {
-                    Icon(
-                        painter = painterResource(R.drawable.more_vert),
-                        contentDescription = null
-                    )
-                }
-            }
-        }
     )
 }

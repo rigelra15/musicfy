@@ -440,10 +440,10 @@ fun SongListItem(
 
     if (isSwipeable) {
         // the caller's modifier (its click handler, its item animation) goes on the row's root
-        SwipeActionsBox(
+        SongSwipeBox(
             modifier = modifier.fillMaxWidth(),
-            start = { librarySwipeAction(song.song) },
-            end = { queueSwipeAction { song.toMediaItem() } },
+            library = { librarySwipeAction(song.song) },
+            queue = { queueSwipeAction { song.toMediaItem() } },
         ) {
             content(Modifier)
         }
@@ -970,10 +970,10 @@ fun YouTubeListItem(
     }
 
     if (item is SongItem && isSwipeable) {
-        SwipeActionsBox(
+        SongSwipeBox(
             modifier = modifier.fillMaxWidth(),
-            start = { librarySwipeAction(item) },
-            end = { queueSwipeAction { item.copy(thumbnail = item.thumbnail.resize(544, 544)).toMediaItem() } },
+            library = { librarySwipeAction(item) },
+            queue = { queueSwipeAction { item.copy(thumbnail = item.thumbnail.resize(544, 544)).toMediaItem() } },
         ) {
             content(Modifier)
         }

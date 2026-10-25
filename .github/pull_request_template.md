@@ -11,5 +11,6 @@
 - [ ] I have tested my changes on an Android device/emulator.
 - [ ] I have verified that no new warnings/errors are introduced.
 - [ ] I have updated the documentation (if necessary).
+- [ ] I use LLM's tool partially to make changes and i already reviewed them
 
 ## 📝 Additional Notes

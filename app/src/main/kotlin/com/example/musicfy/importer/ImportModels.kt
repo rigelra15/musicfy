@@ -16,6 +16,8 @@ data class ImportedTrack(
     val ytItem: SongItem? = null,
     /** When it was added to the source's list (liked, saved to the library), so imports keep that order. */
     val addedAtMs: Long? = null,
+    /** The track's own id on its service ("spotify:track:..."), which a hand-picked version is saved under. */
+    val sourceId: String? = null,
 )
 
 /**

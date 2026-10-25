@@ -23,9 +23,11 @@ import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.VisibilityThreshold
 import androidx.compose.animation.core.animate
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
@@ -64,7 +66,6 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
@@ -163,10 +164,9 @@ import com.example.musicfy.ui.screens.recap.recapBarcodePayload
 import com.example.musicfy.ui.screens.recap.recapDots
 import com.example.musicfy.ui.screens.recap.rememberRecapTime
 import com.example.musicfy.ui.screens.settings.devspace.DevAvatar
-import com.example.musicfy.ui.screens.settings.devspace.rememberDevCounts
+import com.example.musicfy.ui.screens.settings.devspace.DevPeople
 import com.example.musicfy.ui.screens.setup.onboarding.IdCardAspect
 import com.example.musicfy.ui.screens.setup.onboarding.ProfileIdCard
-import com.example.musicfy.ui.screens.donate.showDonateSheet
 import com.example.musicfy.ui.screens.update.UpdateHeadline
 import com.example.musicfy.ui.screens.update.rememberUpdateState
 import com.example.musicfy.ui.screens.update.showUpdateSheet
@@ -708,7 +708,6 @@ fun ProfileScreen(navController: NavController) {
                         VersionCard(
                             updateHeadline = if (updateState is com.example.musicfy.core.updater.UpdateState.Available) UpdateHeadline else null,
                             onAbout = { zoomOutState.showUpdateSheet(updateState) },
-                            covered = { profile.isActive },
                         )
                         Spacer(Modifier.height(16.dp))
                         DeveloperCard(onClick = { navController.navigate("developer_space") })
@@ -939,7 +938,7 @@ private fun TimeValue(value: String, unit: String, k: Float) {
 }
 
 @Composable
-private fun VersionCard(updateHeadline: String?, onAbout: () -> Unit, covered: () -> Boolean) {
+private fun VersionCard(updateHeadline: String?, onAbout: () -> Unit) {
     BoxWithConstraints {
         val k = widthScale(maxWidth.value)
         Row(
@@ -965,44 +964,19 @@ private fun VersionCard(updateHeadline: String?, onAbout: () -> Unit, covered: (
                 }
             }
             Spacer(Modifier.width(10.dp))
-            VersionCapsule(update = updateHeadline != null, onAbout = onAbout, covered = covered)
+            VersionCapsule(update = updateHeadline != null, onAbout = onAbout)
         }
     }
 }
-
-/** What the version card's capsule cycles through, one every [CapsuleCycleMs], when there's no update. */
-private enum class CapsuleAction(val label: String) {
-    ABOUT("About app"),
-    STAR("Star the repo!"),
-    DONATE("Donate me!"),
-    REPORT_BUG("Report bug!"),
-}
-
-private const val CapsuleCycleMs = 3_000L
 
 /**
- * The version card's capsule. With an update waiting it just says "Update". Otherwise it takes
- * turns at About app, Star the repo!, Donate me! and Report bug!, each label popping in - the
- * capsule squashes and springs back past its size while the new word grows in on a bounce and the
- * capsule's width springs to fit it - and a tap does what it says. The rest of the card still
- * opens About. It waits while something [covered] the page, rather than animating unseen.
+ * The version card's capsule: "About app", or "Update" once one is out. The swap pops - the
+ * capsule squashes and springs back past its size while the new word grows in on a bounce and
+ * the width springs to fit it.
  */
 @Composable
-private fun VersionCapsule(update: Boolean, onAbout: () -> Unit, covered: () -> Boolean) {
-    val context = androidx.compose.ui.platform.LocalContext.current
-    val popup = LocalZoomOutOverlayState.current
-    var action by remember { mutableStateOf(CapsuleAction.ABOUT) }
-    val isCovered by rememberUpdatedState(covered)
-    LaunchedEffect(update) {
-        action = CapsuleAction.ABOUT
-        if (update) return@LaunchedEffect
-        while (true) {
-            delay(CapsuleCycleMs)
-            snapshotFlow { isCovered() }.first { !it }
-            action = CapsuleAction.entries[(action.ordinal + 1) % CapsuleAction.entries.size]
-        }
-    }
-    val shown = if (update) "Update" else action.label
+private fun VersionCapsule(update: Boolean, onAbout: () -> Unit) {
+    val shown = if (update) "Update" else "About app"
 
     // the pop: a quick squash, then a spring that carries past full size and settles
     val pop = remember { Animatable(1f) }
@@ -1026,14 +1000,7 @@ private fun VersionCapsule(update: Boolean, onAbout: () -> Unit, covered: () -> 
             }
             .clip(CircleShape)
             .background(Color(0xFF4D4D4D))
-            .clickable {
-                when {
-                    update || action == CapsuleAction.ABOUT -> onAbout()
-                    action == CapsuleAction.STAR -> context.openCapsuleUrl(com.example.musicfy.core.updater.GithubRepoUrl)
-                    action == CapsuleAction.DONATE -> popup.showDonateSheet()
-                    else -> context.openCapsuleUrl(bugReportUrl())
-                }
-            }
+            .clickable(onClick = onAbout)
             .padding(horizontal = 16.dp, vertical = 8.dp),
     ) {
         AnimatedContent(
@@ -1070,81 +1037,44 @@ private fun VersionCapsule(update: Boolean, onAbout: () -> Unit, covered: () -> 
     }
 }
 
-/** A new GitHub issue, already holding the version and device so the report says where it happened. */
-private fun bugReportUrl(): String {
-    val body = buildString {
-        appendLine("**What happened?**")
-        appendLine()
-        appendLine()
-        appendLine("**Steps to make it happen again**")
-        appendLine()
-        appendLine()
-        appendLine("---")
-        appendLine("App version: ${BuildConfig.VERSION_NAME}")
-        appendLine("Android: ${android.os.Build.VERSION.RELEASE} (API ${android.os.Build.VERSION.SDK_INT})")
-        append("Device: ${android.os.Build.MANUFACTURER} ${android.os.Build.MODEL}")
-    }
-    return "${com.example.musicfy.core.updater.GithubRepoUrl}/issues/new?labels=bug&body=${android.net.Uri.encode(body)}"
-}
-
-private fun android.content.Context.openCapsuleUrl(url: String) {
-    runCatching {
-        startActivity(
-            android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(url))
-                .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK),
-        )
-    }
-}
-
-/** "Developer page": roo's picture and the repo's open / resolved issue counts, live from GitHub. */
 @Composable
 private fun DeveloperCard(onClick: () -> Unit) {
-    val counts = rememberDevCounts()
-    Column(
+    val interaction = remember { MutableInteractionSource() }
+    val pressed by interaction.collectIsPressedAsState()
+    val spread by animateFloatAsState(
+        targetValue = if (pressed) 1f else 0f,
+        animationSpec = spring(dampingRatio = 0.55f, stiffness = 420f),
+        label = "devCardSpread",
+    )
+    val face = 30.dp
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(22.dp))
             .background(PageCard)
-            .clickable(onClick = onClick)
-            .padding(CardPadding),
+            .clickable(interactionSource = interaction, indication = null, onClick = onClick)
+            .padding(horizontal = 16.dp, vertical = 12.dp),
     ) {
-        Text("Developer page", style = TextStyle(fontFamily = InterFontFamily, fontWeight = FontWeight.Bold, fontSize = 14.sp, letterSpacing = (-0.4).sp, color = Color(0xFF8A8A8A)))
-        Spacer(Modifier.height(12.dp))
-        BoxWithConstraints(Modifier.fillMaxWidth()) {
-            val k = widthScale(maxWidth.value + 40f) * if (maxOf(counts?.open ?: 0, counts?.resolved ?: 0) >= 100) 0.85f else 1f
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                DevAvatar(Modifier.size((38 * k).dp))
-                Spacer(Modifier.width((14 * k).dp))
-                DevFigure(counts?.open, "issues", k, Modifier.weight(1f, fill = false))
-                Box(
-                    modifier = Modifier
-                        .padding(horizontal = (12 * k).dp)
-                        .width(1.dp)
-                        .height((30 * k).dp)
-                        .background(Color.White.copy(alpha = 0.85f)),
+        // room for every face at rest, 40% of a face apart; pressed they spill to the right
+        Box(Modifier.size(width = face + face * 0.4f * (DevPeople.size - 1), height = face)) {
+            DevPeople.forEachIndexed { i, person ->
+                DevAvatar(
+                    person,
+                    Modifier
+                        .size(face)
+                        .graphicsLayer { translationX = i * face.toPx() * (0.4f + 0.35f * spread) }
+                        .border(1.5.dp, PageCard, CircleShape),
                 )
-                DevFigure(counts?.resolved, "Resolved", k, Modifier.weight(1f, fill = false))
             }
         }
-    }
-}
-
-@Composable
-private fun DevFigure(value: Int?, label: String, k: Float, modifier: Modifier = Modifier) {
-    Row(verticalAlignment = Alignment.Bottom, modifier = modifier) {
-        OdometerNumber(
-            value = value?.toString() ?: "–",
-            fontSize = figureSp(40f * k),
-            fontWeight = FontWeight.Bold,
-            fontFamily = InterFontFamily,
-            color = Color.White,
-            letterSpacing = (-1.6).sp,
-        )
+        Spacer(Modifier.width(12.dp))
         Text(
-            label,
-            style = TextStyle(fontFamily = InterFontFamily, fontWeight = FontWeight.Bold, fontSize = figureSp(15f * k), letterSpacing = (-0.5).sp, color = Color(0xFF8A8A8A)),
+            "meet da dev and contributors :3",
+            style = TextStyle(fontFamily = InterFontFamily, fontWeight = FontWeight.Bold, fontSize = 15.sp, letterSpacing = (-0.6).sp, color = Color(0xFF9A9A9A)),
             maxLines = 1,
-            modifier = Modifier.padding(start = 3.dp, bottom = (6 * k).dp),
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f),
         )
     }
 }

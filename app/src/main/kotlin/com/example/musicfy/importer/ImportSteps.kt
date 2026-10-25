@@ -49,8 +49,11 @@ internal class ImportSteps(
     /** Where each imported playlist lives on its service and what it had there, for Re-sync. */
     val record = PlaylistSourceRecord(database)
 
+    /** A matcher for one run: it uses the versions the user picked and notes what it finds. */
+    fun newMatcher() = TrackMatcher(ImportMatches.get(context), source)
+
     suspend fun runImport(parsed: ParsedImport, options: ImportOptions) {
-        val matcher = TrackMatcher()
+        val matcher = newMatcher()
         val signedIn = context.isUserLoggedIn()
         val mirror = options.mirrorToYouTube && signedIn
 
@@ -295,7 +298,7 @@ internal class ImportSteps(
                     item?.let { Matched(track, it) }
                 }
             }
-        }.awaitAll().filterNotNull()
+        }.awaitAll().filterNotNull().also { matcher.flush() }
     }
 
     private companion object {

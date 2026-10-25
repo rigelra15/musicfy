@@ -19,7 +19,11 @@ const val GithubRepo = "musicfy"
 
 const val GithubProfileUrl = "https://github.com/$GithubOwner"
 const val GithubRepoUrl = "https://github.com/$GithubOwner/$GithubRepo"
-const val InstagramUrl = "https://www.instagram.com/realidkroo/"
+const val InstagramUrl = "https://www.instagram.com/furfurrfoxx/"
+// Threads names follow the Instagram one
+const val ThreadsUrl = "https://www.threads.net/@furfurrfoxx"
+// Dev Spaces hides the Discord row while this is blank
+const val DiscordUrl = ""
 
 private const val ReleasesApi =
     "https://api.github.com/repos/$GithubOwner/$GithubRepo/releases?per_page=20"
@@ -74,16 +78,20 @@ fun parseFullVersion(text: String): FullVersion {
 
 private const val CacheTtlMillis = 15L * 60L * 1000L
 
+/** A release with the version it was parsed to, so it can be compared without parsing again. */
+private class ParsedRelease(val version: FullVersion, val release: GithubRelease)
+
 private val cacheLock = Any()
 private var cachedAt = 0L
-private var cachedResult: Result<GithubRelease?>? = null
-private var inFlight: kotlinx.coroutines.Deferred<Result<GithubRelease?>>? = null
+private var cachedResult: Result<List<ParsedRelease>>? = null
+private var inFlight: kotlinx.coroutines.Deferred<Result<List<ParsedRelease>>>? = null
 
 private val updateScope = kotlinx.coroutines.CoroutineScope(
     kotlinx.coroutines.SupervisorJob() + Dispatchers.IO
 )
 
-suspend fun getLatestRelease(force: Boolean = false): Result<GithubRelease?> {
+/** Every published release, asked for once and shared for [CacheTtlMillis] unless [force]d. */
+private suspend fun getReleases(force: Boolean): Result<List<ParsedRelease>> {
     val deferred = synchronized(cacheLock) {
         if (!force) {
             val cached = cachedResult
@@ -91,7 +99,7 @@ suspend fun getLatestRelease(force: Boolean = false): Result<GithubRelease?> {
                 return cached
             }
         }
-        inFlight ?: updateScope.async { fetchLatestRelease() }.also { inFlight = it }
+        inFlight ?: updateScope.async { fetchReleases() }.also { inFlight = it }
     }
 
     val result = deferred.await()
@@ -105,7 +113,22 @@ suspend fun getLatestRelease(force: Boolean = false): Result<GithubRelease?> {
     return result
 }
 
-suspend fun fetchLatestRelease(): Result<GithubRelease?> = withContext(Dispatchers.IO) {
+/** The newest release, whatever is installed. */
+suspend fun getLatestRelease(force: Boolean = false): Result<GithubRelease?> =
+    getReleases(force).map { list -> list.maxByOrNull { it.version }?.release }
+
+/**
+ * The newest release from before the installed version (by its x.y.z, so an older build of the
+ * same version doesn't count). What "Downgrade to" offers; null when there is none.
+ */
+suspend fun getPreviousRelease(force: Boolean = false): Result<GithubRelease?> {
+    val installed = parseFullVersion(BuildConfig.VERSION_NAME).copy(buildNumber = 0)
+    return getReleases(force).map { list ->
+        list.filter { it.version.copy(buildNumber = 0) < installed }.maxByOrNull { it.version }?.release
+    }
+}
+
+private suspend fun fetchReleases(): Result<List<ParsedRelease>> = withContext(Dispatchers.IO) {
     runCatching {
         val connection = (URL(ReleasesApi).openConnection() as HttpURLConnection).apply {
             connectTimeout = 12_000
@@ -115,92 +138,88 @@ suspend fun fetchLatestRelease(): Result<GithubRelease?> = withContext(Dispatche
         }
         val json = connection.inputStream.bufferedReader().use { it.readText() }
         val releases = JSONArray(json)
-
-        var bestRelease: GithubRelease? = null
-        var bestFullVersion: FullVersion? = null
-
         val appArch = runCatching { BuildConfig.ARCHITECTURE }.getOrDefault("universal")
 
-        for (i in 0 until releases.length()) {
-            val release = releases.getJSONObject(i)
-            if (release.optBoolean("draft", false)) continue
+        buildList {
+            for (i in 0 until releases.length()) {
+                val release = releases.getJSONObject(i)
+                if (release.optBoolean("draft", false)) continue
 
-            val tag = release.optString("tag_name").orEmpty()
-            val title = release.optString("name").orEmpty().ifBlank { tag }
-            val fullVer = parseFullVersion("$title $tag")
+                val tag = release.optString("tag_name").orEmpty()
+                val title = release.optString("name").orEmpty().ifBlank { tag }
+                val fullVer = parseFullVersion("$title $tag")
 
-            if (fullVer.major == 0 && fullVer.minor == 0 && fullVer.patch == 0) continue
+                if (fullVer.major == 0 && fullVer.minor == 0 && fullVer.patch == 0) continue
 
-            val displayVersion = if (fullVer.buildNumber > 0) {
-                "${fullVer.major}.${fullVer.minor}.${fullVer.patch} (${fullVer.buildNumber})"
-            } else {
-                "${fullVer.major}.${fullVer.minor}.${fullVer.patch}"
-            }
+                val displayVersion = if (fullVer.buildNumber > 0) {
+                    "${fullVer.major}.${fullVer.minor}.${fullVer.patch} (${fullVer.buildNumber})"
+                } else {
+                    "${fullVer.major}.${fullVer.minor}.${fullVer.patch}"
+                }
 
-            val assets = release.optJSONArray("assets")
-            var selectedUrl: String? = null
-            var selectedName: String? = null
-            var selectedSize = 0L
+                val assets = release.optJSONArray("assets")
+                var selectedUrl: String? = null
+                var selectedName: String? = null
+                var selectedSize = 0L
 
-            var universalUrl: String? = null
-            var universalName: String? = null
-            var universalSize = 0L
+                var universalUrl: String? = null
+                var universalName: String? = null
+                var universalSize = 0L
 
-            var fallbackUrl: String? = null
-            var fallbackName: String? = null
-            var fallbackSize = 0L
+                var fallbackUrl: String? = null
+                var fallbackName: String? = null
+                var fallbackSize = 0L
 
-            if (assets != null) {
-                for (a in 0 until assets.length()) {
-                    val asset = assets.getJSONObject(a)
-                    val name = asset.optString("name").orEmpty()
-                    if (!name.endsWith(".apk", ignoreCase = true)) continue
-                    val url = asset.optString("browser_download_url").orEmpty()
-                    val size = asset.optLong("size", 0L)
+                if (assets != null) {
+                    for (a in 0 until assets.length()) {
+                        val asset = assets.getJSONObject(a)
+                        val name = asset.optString("name").orEmpty()
+                        if (!name.endsWith(".apk", ignoreCase = true)) continue
+                        val url = asset.optString("browser_download_url").orEmpty()
+                        val size = asset.optLong("size", 0L)
 
-                    if (appArch.isNotBlank() && appArch != "universal" && name.contains(appArch, ignoreCase = true)) {
-                        selectedUrl = url
-                        selectedName = name
-                        selectedSize = size
-                    } else if (name.contains("universal", ignoreCase = true)) {
-                        universalUrl = url
-                        universalName = name
-                        universalSize = size
-                    } else if (fallbackUrl == null) {
-                        fallbackUrl = url
-                        fallbackName = name
-                        fallbackSize = size
+                        if (appArch.isNotBlank() && appArch != "universal" && name.contains(appArch, ignoreCase = true)) {
+                            selectedUrl = url
+                            selectedName = name
+                            selectedSize = size
+                        } else if (name.contains("universal", ignoreCase = true)) {
+                            universalUrl = url
+                            universalName = name
+                            universalSize = size
+                        } else if (fallbackUrl == null) {
+                            fallbackUrl = url
+                            fallbackName = name
+                            fallbackSize = size
+                        }
                     }
                 }
-            }
 
-            val apkUrl = selectedUrl ?: universalUrl ?: fallbackUrl
-            val apkName = selectedName ?: universalName ?: fallbackName
-            val apkSize = when {
-                selectedUrl != null -> selectedSize
-                universalUrl != null -> universalSize
-                else -> fallbackSize
-            }
+                val apkUrl = selectedUrl ?: universalUrl ?: fallbackUrl
+                val apkName = selectedName ?: universalName ?: fallbackName
+                val apkSize = when {
+                    selectedUrl != null -> selectedSize
+                    universalUrl != null -> universalSize
+                    else -> fallbackSize
+                }
 
-            val currentRelease = GithubRelease(
-                title = title,
-                tag = tag,
-                version = displayVersion,
-                body = release.optString("body").orEmpty(),
-                htmlUrl = release.optString("html_url").orEmpty().ifBlank { "$GithubRepoUrl/releases" },
-                apkUrl = apkUrl,
-                apkName = apkName,
-                apkSizeBytes = apkSize,
-                publishedAt = release.optString("published_at").orEmpty(),
-            )
-
-            if (bestFullVersion == null || fullVer > bestFullVersion) {
-                bestFullVersion = fullVer
-                bestRelease = currentRelease
+                add(
+                    ParsedRelease(
+                        version = fullVer,
+                        release = GithubRelease(
+                            title = title,
+                            tag = tag,
+                            version = displayVersion,
+                            body = release.optString("body").orEmpty(),
+                            htmlUrl = release.optString("html_url").orEmpty().ifBlank { "$GithubRepoUrl/releases" },
+                            apkUrl = apkUrl,
+                            apkName = apkName,
+                            apkSizeBytes = apkSize,
+                            publishedAt = release.optString("published_at").orEmpty(),
+                        ),
+                    ),
+                )
             }
         }
-
-        bestRelease
     }
 }
 

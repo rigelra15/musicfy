@@ -392,6 +392,14 @@ fun NavGraphBuilder.navigationBuilder(
         com.example.musicfy.ui.screens.settings.devspace.DeveloperSpaceScreen(navController = navController)
     }
 
+    composable(com.example.musicfy.ui.screens.settings.devspace.DevPlaygroundRoute) {
+        com.example.musicfy.ui.screens.settings.devspace.DevPlaygroundScreen(navController = navController)
+    }
+
+    composable(com.example.musicfy.ui.screens.settings.storage.StorageRoute) {
+        com.example.musicfy.ui.screens.settings.storage.StorageScreen(navController = navController)
+    }
+
     composable("experimental_settings") {
         com.example.musicfy.ui.screens.settings.ExperimentalSettingsScreen(navController = navController)
     }
@@ -442,6 +450,10 @@ fun NavGraphBuilder.navigationBuilder(
 
     composable("equalizer") {
         com.example.musicfy.ui.screens.equalizer.EqualizerScreen(navController = navController)
+    }
+
+    composable("gesture_settings") {
+        com.example.musicfy.ui.screens.gesture.GestureScreen(navController = navController)
     }
 
     composable("audio_lab") {

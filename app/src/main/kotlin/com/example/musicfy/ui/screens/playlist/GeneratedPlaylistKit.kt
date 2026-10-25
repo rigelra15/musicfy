@@ -28,13 +28,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.Checkbox
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -48,7 +43,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.TextFieldValue
@@ -56,11 +50,11 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.musicfy.R
-import com.example.musicfy.ui.component.IconButton
 import com.example.musicfy.ui.component.detail.CreatorUi
 import com.example.musicfy.ui.component.detail.PlaylistDetailScaffold
 import com.example.musicfy.ui.component.detail.PlaylistHeader
 import com.example.musicfy.ui.component.detail.PlaylistInset
+import com.example.musicfy.ui.component.detail.PlaylistModeBar
 import com.example.musicfy.ui.component.detail.PlaylistStatsStyle
 import com.example.musicfy.ui.component.detail.SectionTitleStyle
 import com.example.musicfy.ui.component.detail.playlistCompactHeaderHeight
@@ -89,7 +83,7 @@ fun GeneratedPlaylistPage(
     creator: String? = null,
     onMoreClick: (() -> Unit)? = null,
     sortControl: (@Composable () -> Unit)? = null,
-    topBarOverride: (@Composable () -> Unit)? = null,
+    modeBar: PlaylistModeBar? = null,
     overlay: @Composable BoxScope.() -> Unit = {},
     rows: LazyListScope.() -> Unit,
 ) {
@@ -105,7 +99,7 @@ fun GeneratedPlaylistPage(
         roundCapsule = true,
         headerHeight = playlistCompactHeaderHeight(),
         contentPadding = contentPadding,
-        topBarOverride = topBarOverride,
+        modeBar = modeBar,
         overlay = overlay,
     ) {
         item(key = "generated_header", contentType = "header") {
@@ -220,38 +214,6 @@ fun GeneratedNoResults(query: String, modifier: Modifier = Modifier) {
         style = PlaylistStatsStyle.copy(fontSize = 13.sp),
         color = Color.White.copy(alpha = 0.6f),
         modifier = modifier.padding(horizontal = PlaylistInset, vertical = 24.dp),
-    )
-}
-
-/** the bar while songs are being picked: how many, pick all, and their menu */
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun GeneratedSelectionBar(
-    selectionCount: Int,
-    allSelected: Boolean,
-    onToggleSelectAll: () -> Unit,
-    onSelectionMenu: () -> Unit,
-    onClose: () -> Unit,
-) {
-    TopAppBar(
-        title = {
-            Text(
-                text = pluralStringResource(R.plurals.n_song, selectionCount, selectionCount),
-                style = MaterialTheme.typography.titleLarge,
-            )
-        },
-        navigationIcon = {
-            IconButton(onClick = onClose, onLongClick = {}) {
-                Icon(painter = painterResource(R.drawable.close), contentDescription = null)
-            }
-        },
-        actions = {
-            Checkbox(checked = allSelected, onCheckedChange = { onToggleSelectAll() })
-            IconButton(enabled = selectionCount > 0, onClick = onSelectionMenu, onLongClick = {}) {
-                Icon(painter = painterResource(R.drawable.more_vert), contentDescription = null)
-            }
-        },
-        colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface),
     )
 }
 

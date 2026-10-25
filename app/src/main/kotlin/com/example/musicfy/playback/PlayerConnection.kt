@@ -33,6 +33,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
@@ -131,6 +132,16 @@ class PlayerConnection(
         mediaMetadata.flatMapLatest {
             database.song(it?.id)
         }
+
+    /**
+     * How many ms the current song's lyrics are shifted. Positive shows each line sooner, so it is
+     * added to the playback position wherever lyrics are timed.
+     */
+    val lyricsOffsetMs: StateFlow<Int> = currentSong
+        .map { it?.song?.lyricsOffset ?: 0 }
+        .distinctUntilChanged()
+        .stateIn(scope, SharingStarted.Eagerly, 0)
+
     val currentLyrics = mediaMetadata.flatMapLatest { mediaMetadata ->
         database.lyrics(mediaMetadata?.id)
     }
@@ -673,12 +684,13 @@ class PlayerConnection(
         scope.launch(kotlinx.coroutines.Dispatchers.IO) {
             try {
                 val songEntity = database.song(mediaItem.mediaId).first() ?: return@launch
-                if (songEntity.song.isLocal && songEntity.song.thumbnailUrl == null) {
-                    val artworkFile = java.io.File(context.cacheDir, "artwork_${mediaItem.mediaId.hashCode()}.jpg")
-                    if (!artworkFile.exists()) {
-                        artworkFile.writeBytes(artworkData)
-                    }
-                    val newThumbnailUrl = android.net.Uri.fromFile(artworkFile).toString()
+                val thumbnailUrl = songEntity.song.thumbnailUrl
+                // a cover file that was cleared away counts as none, so playing the song brings it back
+                if (songEntity.song.isLocal &&
+                    (thumbnailUrl == null || com.example.musicfy.importer.LocalArtwork.needsRepair(context, thumbnailUrl))
+                ) {
+                    val newThumbnailUrl = com.example.musicfy.importer.LocalArtwork.save(context, mediaItem.mediaId, artworkData)
+                        ?: return@launch
                     database.query {
                         upsert(songEntity.song.copy(thumbnailUrl = newThumbnailUrl))
                     }

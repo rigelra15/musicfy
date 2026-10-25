@@ -18,6 +18,7 @@ import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.Lifecycle
@@ -27,6 +28,7 @@ import com.example.musicfy.importer.DeviceMusicScanner
 import com.example.musicfy.ui.component.LocalMenuState
 import com.example.musicfy.ui.component.TopToaster
 import com.example.musicfy.viewmodels.LibraryImportViewModel
+import kotlinx.coroutines.launch
 
 /** Audio types the picker offers: every audio type, plus the common ones named outright. */
 private val LocalAudioMimeTypes = arrayOf(
@@ -50,18 +52,30 @@ class LocalImportActions internal constructor(hasStorageAccess: Boolean) {
     internal var pickFiles: () -> Unit = {}
     internal var askForStorage: () -> Unit = {}
     internal var openAddMusic: () -> Unit = {}
+    internal var pickFolderLauncher: () -> Unit = {}
+    internal var refreshThenScan: () -> Unit = {}
 
     /** The import card: the songs found on the phone when Musicfy may look, the file picker otherwise. */
     fun importFromPhone() = if (hasStorageAccess) openAddMusic() else pickFiles()
 
-    /** The storage card and Re-scan: asks for access first if needed, then lists what's on the phone. */
+    /** The storage card: asks for access first if needed, then lists what's on the phone. */
     fun scanPhone() = if (hasStorageAccess) openAddMusic() else askForStorage()
+
+    /** A music folder of the user's own: everything in it comes in, and Re-scan reads it again later. */
+    fun pickFolder() = pickFolderLauncher()
+
+    /**
+     * Re-scan: brings back missing covers and reads the picked folders again, then lists what's
+     * new on the phone. Someone who only uses folders isn't asked for storage access.
+     */
+    fun rescan() = refreshThenScan()
 }
 
 @Composable
 fun rememberLocalImportActions(viewModel: LibraryImportViewModel): LocalImportActions {
     val context = LocalContext.current
     val menuState = LocalMenuState.current
+    val scope = rememberCoroutineScope()
     val actions = remember { LocalImportActions(DeviceMusicScanner.hasAccess(context)) }
 
     // access can be given or taken away in Settings while the app is in the background
@@ -103,10 +117,32 @@ fun rememberLocalImportActions(viewModel: LibraryImportViewModel): LocalImportAc
         }
     }
 
+    val folderPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { tree ->
+        if (tree == null) return@rememberLauncherForActivityResult
+        scope.launch {
+            if (viewModel.addFolder(tree)) showProgress()
+        }
+    }
+
+    val refreshThenScan = {
+        scope.launch {
+            val started = viewModel.refreshLocal()
+            when {
+                started -> showProgress()
+                actions.hasStorageAccess -> openAddMusic()
+                !viewModel.hasFolders() -> permission.launch(DeviceMusicScanner.permission)
+                else -> TopToaster.show("No new songs in your music folders", iconRes = R.drawable.library_music)
+            }
+        }
+        Unit
+    }
+
     SideEffect {
         actions.pickFiles = { picker.launch(LocalAudioMimeTypes) }
         actions.askForStorage = { permission.launch(DeviceMusicScanner.permission) }
         actions.openAddMusic = openAddMusic
+        actions.pickFolderLauncher = { folderPicker.launch(null) }
+        actions.refreshThenScan = refreshThenScan
     }
     return actions
 }

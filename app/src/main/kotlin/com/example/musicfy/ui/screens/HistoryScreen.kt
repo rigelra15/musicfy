@@ -32,7 +32,7 @@ import com.example.musicfy.db.entities.Song
 import com.example.musicfy.extensions.toMediaItem
 import com.example.musicfy.playback.queues.ListQueue
 import com.example.musicfy.ui.component.LocalMenuState
-import com.example.musicfy.ui.component.SwipeActionsBox
+import com.example.musicfy.ui.component.SongSwipeBox
 import com.example.musicfy.ui.component.detail.PlaylistEndOfLine
 import com.example.musicfy.ui.component.detail.PlaylistTrackRow
 import com.example.musicfy.ui.component.librarySwipeAction
@@ -135,10 +135,10 @@ fun HistoryScreen(
 
             items(items = events, key = { it.event.id }, contentType = { "track" }) { eventWithSong ->
                 val song = eventWithSong.song
-                SwipeActionsBox(
+                SongSwipeBox(
                     modifier = Modifier.animateItem(),
-                    start = { librarySwipeAction(song.song) },
-                    end = { queueSwipeAction { song.toMediaItem() } },
+                    library = { librarySwipeAction(song.song) },
+                    queue = { queueSwipeAction { song.toMediaItem() } },
                 ) {
                     PlaylistTrackRow(
                         thumbnailUrl = song.song.thumbnailUrl,

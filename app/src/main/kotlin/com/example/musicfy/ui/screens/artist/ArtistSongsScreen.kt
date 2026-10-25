@@ -31,7 +31,7 @@ import com.example.musicfy.constants.ArtistSongSortTypeKey
 import com.example.musicfy.extensions.toMediaItem
 import com.example.musicfy.playback.queues.ListQueue
 import com.example.musicfy.ui.component.LocalMenuState
-import com.example.musicfy.ui.component.SwipeActionsBox
+import com.example.musicfy.ui.component.SongSwipeBox
 import com.example.musicfy.ui.component.detail.CreatorUi
 import com.example.musicfy.ui.component.detail.PlaylistDetailScaffold
 import com.example.musicfy.ui.component.detail.PlaylistEndOfLine
@@ -126,10 +126,10 @@ fun ArtistSongsScreen(
         }
 
         itemsIndexed(songs, key = { _, song -> song.id }, contentType = { _, _ -> "track" }) { index, song ->
-            SwipeActionsBox(
+            SongSwipeBox(
                 modifier = Modifier.animateItem(),
-                start = { librarySwipeAction(song.song) },
-                end = { queueSwipeAction { song.toMediaItem() } },
+                library = { librarySwipeAction(song.song) },
+                queue = { queueSwipeAction { song.toMediaItem() } },
             ) {
                 PlaylistTrackRow(
                     thumbnailUrl = song.song.thumbnailUrl,

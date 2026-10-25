@@ -102,7 +102,7 @@ class SwipeAction(
     val onTrigger: () -> Unit,
 )
 
-/** sliding left queues a song (green), sliding right saves it or takes it out of your playlist (purple) */
+/** queueing a song is green, saving it or taking it out of your playlist is purple (whichever side it's on) */
 val SwipeQueueColor = Color(0xFF34C759)
 val SwipeSaveColor = Color(0xFF9B72F2)
 
@@ -122,9 +122,9 @@ private const val SwipeResistance = 0.35f
 private val SwipeScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
 // the pill lives in the gap the swipe opens: this far in from the screen edge, this far from the row
-private val PillEdgeInset = 10.dp
-private val PillGap = 8.dp
-private val SlabInset = 10.dp
+internal val PillEdgeInset = 10.dp
+internal val PillGap = 8.dp
+internal val SlabInset = 10.dp
 private val PillPadding = 13.dp
 private val PillIconSize = 18.dp
 private val PillLabelSpacing = 6.dp
@@ -341,7 +341,7 @@ fun SwipeActionsBox(
  * action's colour and the label slides out beside the icon.
  */
 @Composable
-private fun BoxScope.SwipePill(
+internal fun BoxScope.SwipePill(
     action: SwipeAction,
     atStart: Boolean,
     room: () -> Float,
@@ -433,22 +433,22 @@ private fun BoxScope.SwipePill(
     }
 }
 
-/** sliding left on a song: straight onto the end of the queue */
+/** the queue swipe on a song: straight onto the end of the queue */
 @Composable
 fun queueSwipeAction(mediaItem: () -> MediaItem): SwipeAction {
     val context = LocalContext.current
     val playerConnection = LocalPlayerConnection.current
     return SwipeAction(
-        icon = R.drawable.queue_music,
-        color = SwipeQueueColor,
-        label = stringResource(R.string.add_to_queue),
+        icon = SongSwipeAction.Queue.icon,
+        color = SongSwipeAction.Queue.color,
+        label = stringResource(SongSwipeAction.Queue.pillLabel),
     ) {
         // PlayerConnection says "Added to Queue" itself
         playerConnection?.addToQueue(mediaItem())
     }
 }
 
-/** sliding right on a song that's already in the database: into the library, or back out of it */
+/** the library swipe on a song that's already in the database: into the library, or back out of it */
 @Composable
 fun librarySwipeAction(song: SongEntity): SwipeAction {
     val context = LocalContext.current
@@ -533,7 +533,7 @@ fun librarySwipeAction(song: SongItem): SwipeAction {
     }
 }
 
-/** sliding right inside a playlist you made: take the song out of it */
+/** the library swipe inside a playlist you made: take the song out of it */
 @Composable
 fun removeFromPlaylistSwipeAction(onRemove: () -> Unit): SwipeAction =
     SwipeAction(

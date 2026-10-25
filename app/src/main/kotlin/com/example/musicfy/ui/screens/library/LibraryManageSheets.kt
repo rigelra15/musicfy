@@ -95,10 +95,14 @@ fun PopupSheetState.showManageImportsSheet(
     }
 }
 
-/** [onRescan] and [onRemoveFromList] open their own sheets, so this one closes first. */
+/**
+ * [onRescan], [onAddFolder] and [onRemoveFromList] open their own sheets or pickers, so this one
+ * closes first. Re-scan also brings back missing covers and reads the picked folders again.
+ */
 fun PopupSheetState.showManageLocalSheet(
     viewModel: LibraryImportViewModel,
     onRescan: () -> Unit,
+    onAddFolder: () -> Unit,
     onRemoveFromList: () -> Unit,
 ) {
     var sheet: PopupSheetHandle? = null
@@ -111,6 +115,10 @@ fun PopupSheetState.showManageLocalSheet(
             ManageAction(R.drawable.delete, "Delete from list") {
                 sheet?.dismiss()
                 onRemoveFromList()
+            },
+            wide = ManageAction(R.drawable.library_add, "Add a music folder") {
+                sheet?.dismiss()
+                onAddFolder()
             },
             rows = listOf(
                 ManageAction(R.drawable.undo, "Undo import session") {
@@ -160,8 +168,8 @@ fun PopupSheetState.showManageCachedSheet(
     }
 }
 
-/** One more look before music leaves the library, pushed over the sheet that asked. */
-private fun PopupSheetState.showConfirm(title: String, message: String, action: String, onConfirm: () -> Unit) {
+/** One more look before music leaves the phone or the library, pushed over whatever asked. */
+internal fun PopupSheetState.showConfirm(title: String, message: String, action: String, onConfirm: () -> Unit) {
     var sheet: PopupSheetHandle? = null
     sheet = showWithHandle(
         buttonBar = {

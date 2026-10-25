@@ -213,9 +213,9 @@ To lock the current sheet temporarily (e.g. while a download runs), call `state.
 **Don't** re-`show()` the same content with `locked = true`: that pushes a duplicate frame with fresh
 state (the old update-detail sheet did this and lost its download progress).
 
-`UpdateSheet.kt` is the reference: "Donate me!" calls `popup.showDonateSheet()` and "Update" calls
-`popup.showUpdateDetailSheet(...)`, both pushing over the version sheet. Donate's "Done" and the
-detail sheet's back row call `dismiss()` to pop back to it. Use this pattern (`fun
+`UpdateSheet.kt` is the reference: "UPDATE NOW" and "Downgrade to" both call
+`popup.showUpdateDetailSheet(...)`, pushing over the version sheet, and the detail sheet's back row
+calls `dismiss()` to pop back to it. Use this pattern (`fun
 PopupSheetState.showWhatever(...)` extensions) whenever one popup leads to another, rather than
 giving the second screen its own state.
 

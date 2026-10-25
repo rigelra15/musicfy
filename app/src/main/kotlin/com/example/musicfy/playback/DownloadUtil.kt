@@ -12,7 +12,6 @@ import androidx.core.content.getSystemService
 import androidx.core.net.toUri
 import androidx.media3.database.DatabaseProvider
 import androidx.media3.datasource.ResolvingDataSource
-import androidx.media3.datasource.cache.CacheDataSource
 import androidx.media3.datasource.cache.SimpleCache
 import androidx.media3.datasource.okhttp.OkHttpDataSource
 import androidx.media3.exoplayer.offline.Download
@@ -48,7 +47,6 @@ import com.example.musicfy.utils.OfflineMode
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import com.example.musicfy.di.DownloadCache
-import com.example.musicfy.di.PlayerCache
 import com.example.musicfy.ui.utils.resize
 import com.example.musicfy.utils.YTPlayerUtils
 import com.example.musicfy.utils.enumPreference
@@ -84,7 +82,6 @@ constructor(
     val database: MusicDatabase,
     val databaseProvider: DatabaseProvider,
     @DownloadCache val downloadCache: SimpleCache,
-    @PlayerCache val playerCache: SimpleCache,
     private val sourceModules: SourceModules,
     private val lyricsHelper: LyricsHelper,
 ) {
@@ -103,6 +100,9 @@ constructor(
     /** Monochrome's FLAC for each song being downloaded lossless: its url and request headers. */
     private val losslessStreams = java.util.concurrent.ConcurrentHashMap<String, Pair<String, Map<String, String>>>()
 
+    /** The YouTube format each download started in, so a resumed one can't carry on in another. */
+    private val downloadItags = java.util.concurrent.ConcurrentHashMap<String, Int>()
+
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     val downloads = MutableStateFlow<Map<String, Download>>(emptyMap())
@@ -116,53 +116,44 @@ constructor(
      */
     val batch: StateFlow<TransferBatch> = _batch.asStateFlow()
 
+    // Straight from the network, never through the player's cache. The player caches the stream it
+    // played, which is often another format than the download asks for (a lower quality, another
+    // client's stream). A download that took the cached start from there and the rest from its own
+    // stream was two files glued together: the song played for a few seconds, then went silent.
     private val dataSourceFactory =
         ResolvingDataSource.Factory(
-            CacheDataSource
-                .Factory()
-                .setCache(playerCache)
-                .setUpstreamDataSourceFactory(
-                    OkHttpDataSource.Factory(
-                        OkHttpClient.Builder()
-                            .dns(object : Dns {
-                                override fun lookup(hostname: String): List<InetAddress> {
-                                    val addresses = Dns.SYSTEM.lookup(hostname)
-                                    return when (this@DownloadUtil.ipVersion) {
-                                        IpVersion.IPV4 -> addresses.filter { it is Inet4Address }.ifEmpty { addresses }
-                                        IpVersion.IPV6 -> addresses.filter { it is Inet6Address }.ifEmpty { addresses }
-                                        IpVersion.AUTO -> addresses
-                                    }
-                                }
-                            })
-                            .proxy(YouTube.proxy)
-                            .proxyAuthenticator { _, response ->
-                                YouTube.proxyAuth?.let { auth ->
-                                    response.request.newBuilder()
-                                        .header("Proxy-Authorization", auth)
-                                        .build()
-                                } ?: response.request
+            OkHttpDataSource.Factory(
+                OkHttpClient.Builder()
+                    .dns(object : Dns {
+                        override fun lookup(hostname: String): List<InetAddress> {
+                            val addresses = Dns.SYSTEM.lookup(hostname)
+                            return when (this@DownloadUtil.ipVersion) {
+                                IpVersion.IPV4 -> addresses.filter { it is Inet4Address }.ifEmpty { addresses }
+                                IpVersion.IPV6 -> addresses.filter { it is Inet6Address }.ifEmpty { addresses }
+                                IpVersion.AUTO -> addresses
                             }
-                            .build(),
-                    ),
-                ),
+                        }
+                    })
+                    .proxy(YouTube.proxy)
+                    .proxyAuthenticator { _, response ->
+                        YouTube.proxyAuth?.let { auth ->
+                            response.request.newBuilder()
+                                .header("Proxy-Authorization", auth)
+                                .build()
+                        } ?: response.request
+                    }
+                    .build(),
+            ),
         ) { dataSpec ->
             val mediaId = dataSpec.key ?: error("No media id")
-            val length = if (dataSpec.length >= 0) dataSpec.length else 1
 
             if (downloadQuality == DownloadQuality.LOSSLESS && mediaId !in losslessFailed) {
                 losslessStream(mediaId)?.let { (url, headers) ->
                     return@Factory dataSpec.buildUpon()
                         .setUri(url.toUri())
-                        // its own key under the download: the player cache may hold this song's
-                        // YouTube stream under the bare id, and the two mustn't end up in one file
-                        .setKey("$LosslessKeyPrefix$mediaId")
                         .setHttpRequestHeaders(dataSpec.httpRequestHeaders + headers)
                         .build()
                 }
-            }
-
-            if (playerCache.isCached(mediaId, dataSpec.position, length)) {
-                return@Factory dataSpec
             }
 
             // only while it still works. This used to keep the url's lifetime instead of when it ends,
@@ -181,6 +172,14 @@ constructor(
                 )
             }.getOrThrow()
             val format = playbackData.format
+
+            // Picking up part way with a fresh url that gives another format would glue two files
+            // together. Fail instead: the failed download is wiped (see forgetStream), so trying
+            // again starts the whole song over in one format.
+            val startedItag = downloadItags.put(mediaId, format.itag)
+            if (dataSpec.position > 0 && startedItag != null && startedItag != format.itag) {
+                throw java.io.IOException("Stream format changed part way through the download of $mediaId")
+            }
 
             database.query {
                 upsert(
@@ -275,6 +274,7 @@ constructor(
                                     database.updateDownloadedInfo(download.request.id, true, LocalDateTime.now())
                                     recordDownloadedLength(download)
                                     losslessStreams.remove(download.request.id)
+                                    downloadItags.remove(download.request.id)
                                     saveLyrics(download.request.id)
                                 }
                                 Download.STATE_FAILED -> {
@@ -329,12 +329,15 @@ constructor(
 
     /**
      * A failed download tries again with a fresh stream: the url it had may be the reason. One that
-     * failed from Monochrome comes from YouTube next time.
+     * failed from Monochrome comes from YouTube next time. What it got so far is thrown away too:
+     * the next try may get another format, and carrying on from these bytes would mix the two.
      */
     private fun forgetStream(mediaId: String) {
         songUrlCache.remove(mediaId)
         songStreamHeaders.remove(mediaId)
+        downloadItags.remove(mediaId)
         if (losslessStreams.remove(mediaId) != null) losslessFailed += mediaId
+        runCatching { downloadCache.removeResource(mediaId) }
     }
 
     /**
@@ -480,8 +483,6 @@ constructor(
     }
 
     private companion object {
-        /** the key a lossless download is fetched under, below the download cache */
-        const val LosslessKeyPrefix = "lossless|"
         const val LOG_TAG = "MusicfyDownload"
     }
 }

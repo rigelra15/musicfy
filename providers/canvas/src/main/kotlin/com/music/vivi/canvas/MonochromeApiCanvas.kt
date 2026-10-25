@@ -64,15 +64,20 @@ object MonochromeApiCanvas {
 
     private const val CACHE_TTL_MS = 1000L * 60 * 60 * 24
 
+    /**
+     * The animated cover of [song] by [artist], or null. [durationSec] is the song's length when
+     * known; a result that's more than a few seconds off is another recording.
+     */
     suspend fun getBySongArtist(
         song: String,
         artist: String,
-        album: String? = null
+        album: String? = null,
+        durationSec: Int? = null,
     ): CanvasArtwork? {
-        val key = cacheKey("search", song, artist, album ?: "")
+        val key = cacheKey("search", song, artist, album ?: "", durationSec?.toString() ?: "")
         cache[key]?.takeIf { it.expiresAtMs > System.currentTimeMillis() }?.let { return it.value }
 
-        val result = searchForVideoCover(song, artist, album)
+        val result = searchForVideoCover(song, artist, album, durationSec)
         if (result != null) {
             cache[key] = CacheEntry(result, System.currentTimeMillis() + CACHE_TTL_MS)
         }
@@ -82,7 +87,8 @@ object MonochromeApiCanvas {
     private suspend fun searchForVideoCover(
         song: String,
         artist: String,
-        album: String?
+        album: String?,
+        durationSec: Int?,
     ): CanvasArtwork? {
 
         val query = if (!album.isNullOrBlank()) "$artist - $song - $album" else "$artist - $song"
@@ -98,15 +104,21 @@ object MonochromeApiCanvas {
                 val tracksSection = findSearchSection(root, "tracks") ?: continue
                 val items = tracksSection.jsonObject["items"]?.jsonArray ?: continue
 
+                // Only the song itself counts. A loose "title contains" match used to fall through to
+                // another song by the same artist whenever this one's album had no video, and showed
+                // that song's canvas instead. No canvas is fine; the wrong one isn't.
                 for (item in items) {
                     val track = item.jsonObject
 
-                    val trackTitle = track["title"]?.jsonPrimitive?.contentOrNull
-                    if (trackTitle != null && !trackTitle.contains(song, ignoreCase = true)) continue
+                    val trackTitle = track["title"]?.jsonPrimitive?.contentOrNull ?: continue
+                    if (!CanvasMatch.sameSong(trackTitle, song)) continue
 
-                    val artists = track["artists"]?.jsonArray
-                    val resultArtist = artists?.firstOrNull()?.jsonObject?.get("name")?.jsonPrimitive?.contentOrNull
-                    if (resultArtist != null && !resultArtist.contains(artist, ignoreCase = true) && !artist.contains(resultArtist, ignoreCase = true)) continue
+                    val resultArtists = track["artists"]?.jsonArray.orEmpty()
+                        .mapNotNull { it.jsonObject["name"]?.jsonPrimitive?.contentOrNull }
+                    if (resultArtists.none { CanvasMatch.sameArtist(it, artist) }) continue
+
+                    val trackSeconds = track["duration"]?.jsonPrimitive?.contentOrNull?.toDoubleOrNull()
+                    if (!CanvasMatch.closeDuration(trackSeconds, durationSec)) continue
 
                     val albumObj = track["album"]?.jsonObject ?: continue
                     val videoCover = albumObj["videoCover"]?.jsonPrimitive?.contentOrNull
@@ -115,8 +127,8 @@ object MonochromeApiCanvas {
                         val videoUrl = formatVideoUrl(videoCover)
                         if (videoUrl != null) {
                             return CanvasArtwork(
-                                name = trackTitle ?: song,
-                                artist = resultArtist ?: artist,
+                                name = trackTitle,
+                                artist = resultArtists.first(),
                                 videoUrl = videoUrl
                             )
                         }

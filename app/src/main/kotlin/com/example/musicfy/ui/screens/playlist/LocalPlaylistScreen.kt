@@ -35,7 +35,6 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -123,7 +122,7 @@ import com.example.musicfy.ui.component.EmptyPlaceholder
 import com.example.musicfy.playlistcover.PlaylistCoverStore
 import com.example.musicfy.ui.component.LocalMenuState
 import com.example.musicfy.ui.component.showEditPlaylistSheet
-import com.example.musicfy.ui.component.SwipeActionsBox
+import com.example.musicfy.ui.component.SongSwipeBox
 import com.example.musicfy.ui.component.TextFieldDialog
 import com.example.musicfy.ui.component.librarySwipeAction
 import com.example.musicfy.ui.component.queueSwipeAction
@@ -134,7 +133,9 @@ import com.example.musicfy.ui.component.detail.FeaturedArtistsRow
 import com.example.musicfy.ui.component.detail.PlaylistDetailScaffold
 import com.example.musicfy.ui.component.detail.PlaylistEndOfLine
 import com.example.musicfy.ui.component.detail.PlaylistHeader
+import com.example.musicfy.ui.component.detail.PlaylistModeBar
 import com.example.musicfy.ui.component.detail.PlaylistSectionTitle
+import com.example.musicfy.ui.component.detail.PlaylistSelectTick
 import com.example.musicfy.ui.component.detail.PlaylistSortControl
 import com.example.musicfy.ui.component.detail.PlaylistTrackBones
 import com.example.musicfy.ui.component.detail.PlaylistTrackRow
@@ -221,6 +222,13 @@ fun LocalPlaylistScreen(
         selection.clear()
     }
 
+    val downloadUtil = LocalDownloadUtil.current
+    var downloadState by remember { mutableIntStateOf(Download.STATE_STOPPED) }
+
+    val editable: Boolean = playlist?.playlist?.isEditable == true
+    // unlocking from the menu turns the rows into drag handles; the bar's tick locks them again
+    val isEditingOrder = sortType == PlaylistSongSortType.CUSTOM && !locked && !isSearching && editable && !inSelectMode
+
     if (isSearching) {
         BackHandler {
             isSearching = false
@@ -228,12 +236,9 @@ fun LocalPlaylistScreen(
         }
     } else if (inSelectMode) {
         BackHandler(onBack = onExitSelectionMode)
+    } else if (isEditingOrder) {
+        BackHandler { locked = true }
     }
-
-    val downloadUtil = LocalDownloadUtil.current
-    var downloadState by remember { mutableIntStateOf(Download.STATE_STOPPED) }
-
-    val editable: Boolean = playlist?.playlist?.isEditable == true
 
     LaunchedEffect(songs) {
         selection.fastForEachReversed { mapId ->
@@ -403,6 +408,92 @@ fun LocalPlaylistScreen(
         database.query { insert(PlaylistEvent(playlistId = current.id, timestamp = LocalDateTime.now())) }
     }
 
+    val openPlaylistMenu: (() -> Unit)? = playlist?.let { currentPlaylist ->
+        {
+            menuState.show {
+                LocalPlaylistMenu(
+                    playlist = currentPlaylist,
+                    songs = songs,
+                    context = context,
+                    downloadState = downloadState,
+                    // Over the menu, not instead of it: Done comes back to it.
+                    onEdit = {
+                        val top = songs.minWithOrNull(compareBy({ it.map.position }, { it.map.id }))?.song
+                        menuState.showEditPlaylistSheet(
+                            playlist = currentPlaylist.playlist,
+                            database = database,
+                            context = context,
+                            topSongId = top?.id,
+                            topSongArtworkUrl = top?.song?.thumbnailUrl,
+                        )
+                    },
+                    onSync = {
+                        coroutineScope.launch(Dispatchers.IO) {
+                            val playlistPage = YouTube.playlist(currentPlaylist.playlist.browseId!!)
+                                .completed()
+                                .getOrNull() ?: return@launch
+                            database.transaction {
+                                clearPlaylist(currentPlaylist.id)
+                                playlistPage.songs
+                                    .map(SongItem::toMediaMetadata)
+                                    .onEach(::insert)
+                                    .mapIndexed { position, song ->
+                                        PlaylistSongMap(
+                                            songId = song.id,
+                                            playlistId = currentPlaylist.id,
+                                            position = position,
+                                            setVideoId = song.setVideoId
+                                        )
+                                    }
+                                    .forEach(::insert)
+                            }
+                        }
+                        coroutineScope.launch(Dispatchers.Main) {
+                            snackbarHostState.showSnackbar(context.getString(R.string.playlist_synced))
+                        }
+                    },
+                    onDelete = { showDeletePlaylistDialog = true },
+                    onDownload = {
+                        when (downloadState) {
+                            Download.STATE_COMPLETED -> showRemoveDownloadDialog = true
+                            Download.STATE_DOWNLOADING -> {
+                                songs.forEach { song ->
+                                    DownloadService.sendRemoveDownload(context, ExoDownloadService::class.java, song.song.id, false)
+                                }
+                            }
+                            else -> {
+                                songs.forEach { song ->
+                                    val downloadRequest = DownloadRequest
+                                        .Builder(song.song.id, song.song.id.toUri())
+                                        .setCustomCacheKey(song.song.id)
+                                        .setData(song.song.song.title.toByteArray())
+                                        .build()
+                                    DownloadService.sendAddDownload(context, ExoDownloadService::class.java, downloadRequest, false)
+                                }
+                            }
+                        }
+                    },
+                    onQueue = {
+                        playerConnection.addToQueue(items = songs.map { it.song.toMediaItem() })
+                    },
+                    onDismiss = { menuState.dismiss() },
+                    locked = locked,
+                    onToggleLock = {
+                        locked = !locked
+                        // dragging only means something in your own order
+                        if (!locked) onSortTypeChange(PlaylistSongSortType.CUSTOM)
+                    },
+                    onShowSortDialog = { showSortDialog = true },
+                    onSearch = { isSearching = true },
+                    onPlayNext = {
+                        playerConnection.playNext(songs.map { it.song.toMediaItem() })
+                    },
+                    navController = navController,
+                )
+            }
+        }
+    }
+
     PlaylistDetailScaffold(
         sharedElementKey = "playlist-${viewModel.playlistId}",
         coverUrl = coverUrl,
@@ -412,127 +503,47 @@ fun LocalPlaylistScreen(
         showCover = !isSearching,
         contentPadding = LocalPlayerAwareWindowInsets.current.only(WindowInsetsSides.Bottom)
             .union(WindowInsets.ime).asPaddingValues(),
-        onMoreClick = playlist?.let { currentPlaylist ->
-            {
-                menuState.show {
-                    LocalPlaylistMenu(
-                        playlist = currentPlaylist,
-                        songs = songs,
-                        context = context,
-                        downloadState = downloadState,
-                        // Over the menu, not instead of it: Done comes back to it.
-                        onEdit = {
-                            val top = songs.minWithOrNull(compareBy({ it.map.position }, { it.map.id }))?.song
-                            menuState.showEditPlaylistSheet(
-                                playlist = currentPlaylist.playlist,
-                                database = database,
-                                context = context,
-                                topSongId = top?.id,
-                                topSongArtworkUrl = top?.song?.thumbnailUrl,
-                            )
-                        },
-                        onSync = {
-                            coroutineScope.launch(Dispatchers.IO) {
-                                val playlistPage = YouTube.playlist(currentPlaylist.playlist.browseId!!)
-                                    .completed()
-                                    .getOrNull() ?: return@launch
-                                database.transaction {
-                                    clearPlaylist(currentPlaylist.id)
-                                    playlistPage.songs
-                                        .map(SongItem::toMediaMetadata)
-                                        .onEach(::insert)
-                                        .mapIndexed { position, song ->
-                                            PlaylistSongMap(
-                                                songId = song.id,
-                                                playlistId = currentPlaylist.id,
-                                                position = position,
-                                                setVideoId = song.setVideoId
-                                            )
-                                        }
-                                        .forEach(::insert)
-                                }
-                            }
-                            coroutineScope.launch(Dispatchers.Main) {
-                                snackbarHostState.showSnackbar(context.getString(R.string.playlist_synced))
-                            }
-                        },
-                        onDelete = { showDeletePlaylistDialog = true },
-                        onDownload = {
-                            when (downloadState) {
-                                Download.STATE_COMPLETED -> showRemoveDownloadDialog = true
-                                Download.STATE_DOWNLOADING -> {
-                                    songs.forEach { song ->
-                                        DownloadService.sendRemoveDownload(context, ExoDownloadService::class.java, song.song.id, false)
-                                    }
-                                }
-                                else -> {
-                                    songs.forEach { song ->
-                                        val downloadRequest = DownloadRequest
-                                            .Builder(song.song.id, song.song.id.toUri())
-                                            .setCustomCacheKey(song.song.id)
-                                            .setData(song.song.song.title.toByteArray())
-                                            .build()
-                                        DownloadService.sendAddDownload(context, ExoDownloadService::class.java, downloadRequest, false)
-                                    }
-                                }
-                            }
-                        },
-                        onQueue = {
-                            playerConnection.addToQueue(items = songs.map { it.song.toMediaItem() })
-                        },
-                        onDismiss = { menuState.dismiss() },
-                        locked = locked,
-                        onToggleLock = { locked = !locked },
-                        onShowSortDialog = { showSortDialog = true },
-                        onSearch = { isSearching = true },
-                        onPlayNext = {
-                            playerConnection.playNext(songs.map { it.song.toMediaItem() })
-                        },
-                        navController = navController,
-                    )
-                }
-            }
-        },
-        topBarOverride = if (inSelectMode || isSearching) {
+        onMoreClick = openPlaylistMenu,
+        topBarOverride = if (isSearching) {
             {
                 LocalPlaylistSearchBar(
-                    inSelectMode = inSelectMode,
-                    isSearching = isSearching,
                     query = query,
                     onQueryChange = { query = it },
                     focusRequester = focusRequester,
-                    selectionCount = selection.size,
-                    allSelected = selection.size == songs.size && selection.isNotEmpty(),
-                    onToggleSelectAll = {
-                        if (selection.size == songs.size) {
-                            selection.clear()
-                        } else {
-                            selection.clear()
-                            selection.addAll(songs.map { it.map.id })
-                        }
-                    },
-                    onSelectionMenu = {
-                        menuState.show {
-                            SelectionSongMenu(
-                                songSelection = selection.mapNotNull { mapId -> songs.find { it.map.id == mapId }?.song },
-                                songPosition = selection.mapNotNull { mapId -> songs.find { it.map.id == mapId }?.map },
-                                onDismiss = menuState::dismiss,
-                                clearAction = onExitSelectionMode
-                            )
-                        }
-                    },
-                    onExitSelection = onExitSelectionMode,
                     onBack = {
-                        if (isSearching) {
-                            isSearching = false
-                            query = TextFieldValue()
-                        } else {
-                            navController.navigateUp()
-                        }
+                        isSearching = false
+                        query = TextFieldValue()
                     },
                 )
             }
         } else null,
+        modeBar = when {
+            inSelectMode -> PlaylistModeBar.Select(
+                count = selection.size,
+                allSelected = selection.size == songs.size && selection.isNotEmpty(),
+                onToggleAll = {
+                    val selectAll = selection.size != songs.size
+                    selection.clear()
+                    if (selectAll) selection.addAll(songs.map { it.map.id })
+                },
+                onMore = {
+                    menuState.show {
+                        SelectionSongMenu(
+                            songSelection = selection.mapNotNull { mapId -> songs.find { it.map.id == mapId }?.song },
+                            songPosition = selection.mapNotNull { mapId -> songs.find { it.map.id == mapId }?.map },
+                            onDismiss = menuState::dismiss,
+                            clearAction = onExitSelectionMode
+                        )
+                    }
+                },
+                onClose = onExitSelectionMode,
+            )
+            isEditingOrder -> PlaylistModeBar.EditOrder(
+                onMore = openPlaylistMenu,
+                onDone = { locked = true },
+            )
+            else -> null
+        },
         overlay = {
             DraggableScrollbar(
                 modifier = Modifier
@@ -695,42 +706,23 @@ fun LocalPlaylistScreen(
                                 )
                             }
                         },
+                        selected = inSelectMode && selection.contains(song.map.id),
                         trailing = when {
                             inSelectMode -> {
-                                { Checkbox(checked = selection.contains(song.map.id), onCheckedChange = onCheckedChange) }
+                                { PlaylistSelectTick(checked = selection.contains(song.map.id)) }
                             }
-                            sortType == PlaylistSongSortType.CUSTOM && !locked && !isSearching && editable -> {
+                            // only the handle while reordering, so a tap can't open a menu mid-drag
+                            isEditingOrder -> {
                                 {
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        IconButton(
-                                            onClick = {
-                                                menuState.show {
-                                                    SongMenu(
-                                                        originalSong = song.song,
-                                                        playlistSong = song,
-                                                        playlistBrowseId = playlist?.playlist?.browseId,
-                                                        navController = navController,
-                                                        onDismiss = menuState::dismiss,
-                                                    )
-                                                }
-                                            },
-                                        ) {
-                                            Icon(
-                                                painter = painterResource(R.drawable.more_horiz),
-                                                contentDescription = null,
-                                                tint = Color.White.copy(alpha = 0.78f),
-                                            )
-                                        }
-                                        IconButton(
-                                            onClick = { },
-                                            modifier = Modifier.draggableHandle(),
-                                        ) {
-                                            Icon(
-                                                painter = painterResource(R.drawable.drag_handle),
-                                                contentDescription = null,
-                                                tint = Color.White.copy(alpha = 0.78f),
-                                            )
-                                        }
+                                    IconButton(
+                                        onClick = { },
+                                        modifier = Modifier.draggableHandle(),
+                                    ) {
+                                        Icon(
+                                            painter = painterResource(R.drawable.drag_handle),
+                                            contentDescription = "Drag to move",
+                                            tint = Color.White.copy(alpha = 0.78f),
+                                        )
                                     }
                                 }
                             }
@@ -739,19 +731,19 @@ fun LocalPlaylistScreen(
                     )
                 }
 
-                SwipeActionsBox(
+                SongSwipeBox(
                     modifier = Modifier.animateItem(),
                     enabled = !inSelectMode,
-                    // in your own playlist sliding right takes the song out; a saved one you can't
-                    // edit adds it to your library instead. sliding left always queues it.
-                    start = {
+                    // in your own playlist the library action takes the song out; a saved one you
+                    // can't edit adds it to your library instead. Settings > Gesture sets the side.
+                    library = {
                         if (editable) {
                             removeFromPlaylistSwipeAction { removeWithUndo() }
                         } else {
                             librarySwipeAction(song.song.song)
                         }
                     },
-                    end = { queueSwipeAction { song.song.toMediaItem() } },
+                    queue = { queueSwipeAction { song.song.toMediaItem() } },
                 ) {
                     content()
                 }
@@ -952,16 +944,9 @@ private fun playlistSortLabel(type: PlaylistSongSortType): Int = when (type) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun LocalPlaylistSearchBar(
-    inSelectMode: Boolean,
-    isSearching: Boolean,
     query: TextFieldValue,
     onQueryChange: (TextFieldValue) -> Unit,
     focusRequester: FocusRequester,
-    selectionCount: Int,
-    allSelected: Boolean,
-    onToggleSelectAll: () -> Unit,
-    onSelectionMenu: () -> Unit,
-    onExitSelection: () -> Unit,
     onBack: () -> Unit,
 ) {
     TopAppBar(
@@ -969,55 +954,34 @@ private fun LocalPlaylistSearchBar(
             containerColor = MaterialTheme.colorScheme.surface,
         ),
         title = {
-            if (inSelectMode) {
-                Text(pluralStringResource(R.plurals.n_selected, selectionCount, selectionCount))
-            } else if (isSearching) {
-                TextField(
-                    value = query,
-                    onValueChange = onQueryChange,
-                    placeholder = {
-                        Text(
-                            text = stringResource(R.string.search),
-                            style = MaterialTheme.typography.titleLarge
-                        )
-                    },
-                    singleLine = true,
-                    textStyle = MaterialTheme.typography.titleLarge,
-                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-                    colors = TextFieldDefaults.colors(
-                        focusedContainerColor = Color.Transparent,
-                        unfocusedContainerColor = Color.Transparent,
-                        focusedIndicatorColor = Color.Transparent,
-                        unfocusedIndicatorColor = Color.Transparent,
-                        disabledIndicatorColor = Color.Transparent,
-                    ),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .focusRequester(focusRequester)
-                )
-            }
+            TextField(
+                value = query,
+                onValueChange = onQueryChange,
+                placeholder = {
+                    Text(
+                        text = stringResource(R.string.search),
+                        style = MaterialTheme.typography.titleLarge
+                    )
+                },
+                singleLine = true,
+                textStyle = MaterialTheme.typography.titleLarge,
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                colors = TextFieldDefaults.colors(
+                    focusedContainerColor = Color.Transparent,
+                    unfocusedContainerColor = Color.Transparent,
+                    focusedIndicatorColor = Color.Transparent,
+                    unfocusedIndicatorColor = Color.Transparent,
+                    disabledIndicatorColor = Color.Transparent,
+                ),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .focusRequester(focusRequester)
+            )
         },
         navigationIcon = {
-            if (inSelectMode) {
-                IconButton(onClick = onExitSelection) {
-                    Icon(painter = painterResource(R.drawable.close), contentDescription = null)
-                }
-            } else {
-                IconButton(onClick = onBack) {
-                    Icon(painter = painterResource(R.drawable.arrow_back_ios), contentDescription = null)
-                }
+            IconButton(onClick = onBack) {
+                Icon(painter = painterResource(R.drawable.arrow_back_ios), contentDescription = null)
             }
         },
-        actions = {
-            if (inSelectMode) {
-                Checkbox(checked = allSelected, onCheckedChange = { onToggleSelectAll() })
-                IconButton(
-                    enabled = selectionCount > 0,
-                    onClick = onSelectionMenu
-                ) {
-                    Icon(painter = painterResource(R.drawable.more_vert), contentDescription = null)
-                }
-            }
-        }
     )
 }

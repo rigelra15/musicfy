@@ -2,13 +2,33 @@
 
 package com.example.musicfy.ui.screens.update
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.SizeTransform
 import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
@@ -41,59 +61,61 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.graphics.drawable.toBitmap
 import com.example.musicfy.BuildConfig
 import com.example.musicfy.R
-import com.example.musicfy.core.updater.GithubProfileUrl
 import com.example.musicfy.core.updater.GithubRelease
-import com.example.musicfy.core.updater.GithubRepoUrl
-import com.example.musicfy.core.updater.InstagramUrl
 import com.example.musicfy.core.updater.UpdateState
-import com.example.musicfy.core.updater.downloadApk
 import com.example.musicfy.core.updater.apkFileFor
-import com.example.musicfy.core.updater.getLatestRelease
+import com.example.musicfy.core.updater.downloadApk
 import com.example.musicfy.core.updater.formatBytes
+import com.example.musicfy.core.updater.getLatestRelease
+import com.example.musicfy.core.updater.getPreviousRelease
 import com.example.musicfy.core.updater.installApk
 import com.example.musicfy.core.updater.isDownloaded
 import com.example.musicfy.core.updater.isNewerThanInstalled
+import com.example.musicfy.core.updater.parseFullVersion
 import com.example.musicfy.ui.component.PopupSheetState
-import com.example.musicfy.ui.component.SheetIcon
+import com.example.musicfy.ui.component.pressBounce
 import com.example.musicfy.ui.player.menu.MenuRowSurface
 import com.example.musicfy.ui.player.menu.MenuSurface
-import com.example.musicfy.ui.screens.donate.showDonateSheet
 import kotlinx.coroutines.launch
 
 @Composable
 fun rememberUpdateState(): androidx.compose.runtime.State<UpdateState> {
     val state = remember { mutableStateOf<UpdateState>(UpdateState.Checking) }
-    LaunchedEffect(Unit) {
-        val result = getLatestRelease()
-        state.value = result.fold(
-            onSuccess = { release ->
-                when {
-                    release == null -> UpdateState.UpToDate
-                    isNewerThanInstalled(release.version) -> UpdateState.Available(release)
-                    else -> UpdateState.UpToDate
-                }
-            },
-            onFailure = { UpdateState.Failed(it.message ?: "Couldn't reach GitHub") },
-        )
-    }
+    LaunchedEffect(Unit) { state.value = checkUpdate(force = false) }
     return state
 }
+
+/** Asks GitHub (or the shared copy, unless [force]d) whether a newer release is out. */
+private suspend fun checkUpdate(force: Boolean): UpdateState =
+    getLatestRelease(force).fold(
+        onSuccess = { release ->
+            when {
+                release == null -> UpdateState.UpToDate
+                isNewerThanInstalled(release.version) -> UpdateState.Available(release)
+                else -> UpdateState.UpToDate
+            }
+        },
+        onFailure = { UpdateState.Failed(it.message ?: "Couldn't reach GitHub") },
+    )
 
 /** Shows the "app version" sheet as a PopupSheet - see docs/popup-sheet.skill.md. */
 fun PopupSheetState.showUpdateSheet(updateState: UpdateState) {
     val popup = this
-    show(buttonBar = { SheetPrimaryButton(text = "Got it!", onClick = popup::dismiss) }) {
-        UpdateSheetContent(updateState = updateState, popup = popup)
+    show(buttonBar = { SheetPrimaryButton(text = "Done", onClick = popup::dismiss) }) {
+        UpdateSheetContent(initialState = updateState, popup = popup)
     }
 }
 
@@ -113,211 +135,341 @@ private fun PopupSheetState.showUpdateDetailSheet(release: GithubRelease) {
 
 @Composable
 private fun SheetPrimaryButton(text: String, onClick: () -> Unit) {
+    val interaction = remember { MutableInteractionSource() }
     Box(
         modifier = Modifier
+            .pressBounce(interaction, pressedScale = 0.97f)
             .fillMaxWidth()
-            .height(46.dp)
+            .height(50.dp)
             .clip(CircleShape)
-            .background(MenuRowSurface)
-            .clickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = null,
-                onClick = onClick,
-            ),
+            .background(Color.White.copy(alpha = 0.26f))
+            .clickable(interactionSource = interaction, indication = null, onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
-        Text(text = text, fontSize = 15.sp, fontWeight = FontWeight.Bold)
+        Text(text = text, fontSize = 17.sp, fontWeight = FontWeight.Bold, letterSpacing = (-0.4).sp)
     }
 }
 
+private val StableGreen = Color(0xFF9CF58A)
+private val BetaYellow = Color(0xFFF5E27A)
+
+/** "8.1.0 build#1165" -> "8.1.0", "8.0.2 (1100)" -> "8.0.2" */
+private fun shortVersion(version: String): String = version.substringBefore(' ')
+
+/**
+ * The app version sheet: the app, the version you're on and its channel, what's newer if
+ * anything, and what you can do about it. The ring in the corner turns the whole time it's open.
+ */
 @Composable
-private fun ColumnScope.UpdateSheetContent(updateState: UpdateState, popup: PopupSheetState) {
-    val context = LocalContext.current
+private fun ColumnScope.UpdateSheetContent(initialState: UpdateState, popup: PopupSheetState) {
+    val scope = rememberCoroutineScope()
+    var state by remember { mutableStateOf(initialState) }
+    var latest by remember { mutableStateOf((initialState as? UpdateState.Available)?.release) }
+    var previous by remember { mutableStateOf<GithubRelease?>(null) }
 
-    Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState())) {
-
-    Spacer(modifier = Modifier.height(4.dp))
-
-    Box(
-        modifier = Modifier
-            .size(56.dp)
-            .clip(RoundedCornerShape(18.dp))
-            .background(MenuRowSurface),
-        contentAlignment = Alignment.Center,
-    ) {
-        Icon(
-            painter = painterResource(R.drawable.ic_musicfy_mark),
-            contentDescription = null,
-            modifier = Modifier.size(30.dp),
-        )
+    suspend fun refresh(force: Boolean) {
+        state = checkUpdate(force)
+        // a failed check keeps what it knew, so the rows don't vanish when offline
+        latest = getLatestRelease().getOrNull() ?: latest
+        previous = getPreviousRelease().getOrNull() ?: previous
+    }
+    // the shared copy answers instantly when the app already checked on launch
+    LaunchedEffect(Unit) { refresh(force = false) }
+    val checkAgain: () -> Unit = {
+        if (state !is UpdateState.Checking) {
+            state = UpdateState.Checking
+            scope.launch { refresh(force = true) }
+        }
     }
 
-    Spacer(modifier = Modifier.height(16.dp))
-
-    Text(
-        text = "Musicfy ${BuildConfig.VERSION_NAME} by roo",
-        fontSize = 17.sp,
-        fontWeight = FontWeight.Bold,
-    )
-    Text(
-        text = when (updateState) {
-            is UpdateState.Available -> UpdateHeadline
-            UpdateState.Checking -> "Checking for updates…"
-            is UpdateState.Failed -> "Couldn't check for updates"
-            UpdateState.UpToDate -> "Latest version"
-        },
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-        fontSize = 13.sp,
-        fontWeight = FontWeight.Medium,
-    )
-
-    if (updateState is UpdateState.Available) {
-        Spacer(modifier = Modifier.height(18.dp))
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
+    val installed = shortVersion(BuildConfig.VERSION_NAME)
+    Box(Modifier.fillMaxWidth()) {
+        // centred just inside the sheet's top-right corner, so the sheet's own edge cuts it off.
+        // Placed with no size of its own, so it never pushes the content around.
+        VersionRing(
+            text = "MUSICFY $installed",
             modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(18.dp))
-                .background(MenuRowSurface)
-                .padding(14.dp)
-        ) {
+                .align(Alignment.TopEnd)
+                .layout { measurable, constraints ->
+                    val placeable = measurable.measure(constraints.copy(minWidth = 0, minHeight = 0, maxWidth = Constraints.Infinity, maxHeight = Constraints.Infinity))
+                    layout(0, 0) {
+                        placeable.place(x = (-195).dp.roundToPx(), y = (-134).dp.roundToPx())
+                    }
+                },
+        )
+
+        Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState())) {
+            Spacer(Modifier.height(6.dp))
             Box(
                 modifier = Modifier
-                    .size(42.dp)
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(MenuSurface),
+                    .size(76.dp)
+                    .clip(RoundedCornerShape(22.dp))
+                    .background(MenuRowSurface),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
                     painter = painterResource(R.drawable.ic_musicfy_mark),
                     contentDescription = null,
-                    modifier = Modifier.size(24.dp),
+                    tint = Color.White,
+                    modifier = Modifier.size(38.dp),
                 )
             }
-            Spacer(modifier = Modifier.width(12.dp))
-            Column(modifier = Modifier.weight(1f)) {
+
+            Spacer(Modifier.height(14.dp))
+            Text("Musicfy", fontSize = 17.sp, fontWeight = FontWeight.Bold, letterSpacing = (-0.5).sp)
+            Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    text = updateState.release.title,
-                    fontSize = 14.sp,
+                    installed,
+                    fontSize = 44.sp,
+                    lineHeight = 46.sp,
                     fontWeight = FontWeight.Bold,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
+                    letterSpacing = (-2).sp,
                 )
-                Text(
-                    text = remember(updateState.release.body) {
-                        changelogSummaryLine(updateState.release.body)
-                    }.ifBlank { "No description" },
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontSize = 11.sp,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
+                Spacer(Modifier.width(14.dp))
+                ChannelBadge(latest)
+            }
+
+            Spacer(Modifier.height(16.dp))
+            UpdateStatusCard(
+                state = state,
+                onUpdate = { popup.showUpdateDetailSheet(it) },
+                onRetry = checkAgain,
+            )
+
+            Spacer(Modifier.height(22.dp))
+            Text("Actions", fontSize = 17.sp, fontWeight = FontWeight.Bold, letterSpacing = (-0.5).sp)
+            Spacer(Modifier.height(10.dp))
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                ActionRow(
+                    icon = R.drawable.refresh,
+                    label = if (state is UpdateState.Checking) "Checking…" else "Check for update",
+                    spinning = state is UpdateState.Checking,
+                    onClick = checkAgain,
+                )
+                AnimatedVisibility(
+                    visible = previous != null,
+                    enter = expandVertically(spring(dampingRatio = 0.85f, stiffness = 420f)) + fadeIn(),
+                    exit = shrinkVertically() + fadeOut(),
+                ) {
+                    previous?.let { older ->
+                        ActionRow(
+                            icon = R.drawable.history,
+                            label = "Downgrade to ${shortVersion(older.version)}",
+                            onClick = { popup.showUpdateDetailSheet(older) },
+                        )
+                    }
+                }
+                ActionRow(
+                    icon = R.drawable.bedtime,
+                    label = "Switch to nightly",
+                    hint = "Not out yet",
+                    enabled = false,
+                    onClick = {},
                 )
             }
-            Spacer(modifier = Modifier.width(10.dp))
-            Box(
-                modifier = Modifier
-                    .clip(RoundedCornerShape(50))
-                    .background(MaterialTheme.colorScheme.primary)
-                    .clickable(
-                        interactionSource = remember { MutableInteractionSource() },
-                        indication = null,
-                        onClick = { popup.showUpdateDetailSheet(updateState.release) },
-                    )
-                    .padding(horizontal = 16.dp, vertical = 7.dp)
-            ) {
-                Text(
-                    text = "Update",
-                    color = MaterialTheme.colorScheme.onPrimary,
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Bold,
-                )
-            }
+            Spacer(Modifier.height(6.dp))
         }
     }
+}
 
-    Spacer(modifier = Modifier.height(18.dp))
+/**
+ * Which channel this build is: a nightly says so, a build newer than anything released is a
+ * beta, everything else is stable.
+ */
+@Composable
+private fun ChannelBadge(latest: GithubRelease?) {
+    val aheadOfReleases = latest != null &&
+        parseFullVersion(latest.version).copy(buildNumber = 0) < parseFullVersion(BuildConfig.VERSION_NAME).copy(buildNumber = 0)
+    val (label, color) = when {
+        BuildConfig.IS_NIGHTLY -> "NIGHTLY" to BetaYellow
+        aheadOfReleases -> "BETA" to BetaYellow
+        else -> "STABLE" to StableGreen
+    }
+    AnimatedContent(
+        targetState = label to color,
+        transitionSpec = {
+            (scaleIn(spring(dampingRatio = 0.5f, stiffness = 500f), initialScale = 0.6f) + fadeIn())
+                .togetherWith(scaleOut(targetScale = 0.6f) + fadeOut())
+        },
+        label = "channelBadge",
+    ) { (text, tint) ->
+        Text(
+            text,
+            color = tint,
+            fontSize = 12.sp,
+            fontFamily = FontFamily.Monospace,
+            letterSpacing = 1.sp,
+            modifier = Modifier
+                .border(1.dp, tint.copy(alpha = 0.8f), CircleShape)
+                .padding(horizontal = 14.dp, vertical = 4.dp),
+        )
+    }
+}
 
-    Column(
+/** The card under the version: what GitHub said, and the one thing to do about it. */
+@Composable
+private fun UpdateStatusCard(
+    state: UpdateState,
+    onUpdate: (GithubRelease) -> Unit,
+    onRetry: () -> Unit,
+) {
+    Box(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(22.dp))
+            .clip(RoundedCornerShape(24.dp))
             .background(MenuRowSurface)
-            .padding(14.dp)
+            .padding(horizontal = 20.dp, vertical = 18.dp),
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Image(
-                painter = painterResource(R.drawable.frame_51_3),
-                contentDescription = null,
-                contentScale = ContentScale.Crop,
-                modifier = Modifier
-                    .size(46.dp)
-                    .clip(CircleShape),
-            )
-            Spacer(modifier = Modifier.width(12.dp))
-            Column {
-                Text(text = "Hello", fontSize = 20.sp, fontWeight = FontWeight.Bold)
-                Text(
-                    text = "Im the main dev here",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontSize = 11.sp,
+        AnimatedContent(
+            targetState = state,
+            contentKey = { it::class },
+            transitionSpec = {
+                (fadeIn(tween(220, delayMillis = 80)) + slideInVertically(spring(dampingRatio = 0.8f, stiffness = 400f)) { it / 4 })
+                    .togetherWith(fadeOut(tween(120)))
+                    .using(SizeTransform(clip = false))
+            },
+            label = "updateStatus",
+        ) { shown ->
+            when (shown) {
+                is UpdateState.Available -> StatusRow(
+                    title = "New update!",
+                    big = shortVersion(shown.release.version),
+                    action = "UPDATE NOW",
+                    onAction = { onUpdate(shown.release) },
+                )
+                UpdateState.Checking -> StatusRow(title = "Looking for updates", big = "…", pulsing = true)
+                UpdateState.UpToDate -> StatusRow(title = "You're on the latest", big = "All good")
+                is UpdateState.Failed -> StatusRow(
+                    title = "Couldn't check for updates",
+                    big = "Offline?",
+                    action = "TRY AGAIN",
+                    onAction = onRetry,
                 )
             }
         }
+    }
+}
 
-        Spacer(modifier = Modifier.height(12.dp))
-
-        LinkRow(R.drawable.star, "Star the repo") { context.openUrl(GithubRepoUrl) }
-        Spacer(modifier = Modifier.height(8.dp))
-        LinkRow(R.drawable.github, "@realidkroo") { context.openUrl(GithubProfileUrl) }
-        Spacer(modifier = Modifier.height(8.dp))
-        LinkRow(R.drawable.link, "@realidkroo") { context.openUrl(InstagramUrl) }
-        Spacer(modifier = Modifier.height(8.dp))
-
-        LinkRow(R.drawable.heart, "Donate me!", enabled = true) {
-            // Same PopupSheetState, so this pushes Donate on top and this sheet recedes
-            // behind it instead of closing. See docs/popup-sheet.skill.md.
-            popup.showDonateSheet()
+@Composable
+private fun StatusRow(
+    title: String,
+    big: String,
+    action: String? = null,
+    onAction: () -> Unit = {},
+    pulsing: Boolean = false,
+) {
+    val pulse = if (pulsing) {
+        rememberInfiniteTransition(label = "statusPulse").animateFloat(
+            initialValue = 0.35f,
+            targetValue = 1f,
+            animationSpec = infiniteRepeatable(tween(700), RepeatMode.Reverse),
+            label = "statusPulseAlpha",
+        )
+    } else {
+        null
+    }
+    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+        Column(Modifier.weight(1f)) {
+            Text(title, fontSize = 17.sp, fontWeight = FontWeight.Bold, letterSpacing = (-0.5).sp)
+            Text(
+                big,
+                fontSize = 40.sp,
+                lineHeight = 42.sp,
+                fontWeight = FontWeight.Bold,
+                letterSpacing = (-1.8).sp,
+                maxLines = 1,
+                modifier = Modifier.graphicsLayer { alpha = pulse?.value ?: 1f },
+            )
+        }
+        if (action != null) {
+            val interaction = remember { MutableInteractionSource() }
+            Text(
+                action,
+                fontSize = 13.sp,
+                fontFamily = FontFamily.Monospace,
+                letterSpacing = 0.6.sp,
+                modifier = Modifier
+                    .pressBounce(interaction)
+                    .clip(CircleShape)
+                    .background(Color.White.copy(alpha = 0.2f))
+                    .border(1.dp, Color.White.copy(alpha = 0.22f), CircleShape)
+                    .clickable(interactionSource = interaction, indication = null, onClick = onAction)
+                    .padding(horizontal = 16.dp, vertical = 7.dp),
+            )
         }
     }
+}
 
-    Spacer(modifier = Modifier.height(4.dp))
+/** A row under Actions: a light disc with the icon, then the label. Dimmed ones can't be tapped. */
+@Composable
+private fun ActionRow(
+    icon: Int,
+    label: String,
+    onClick: () -> Unit,
+    hint: String? = null,
+    enabled: Boolean = true,
+    spinning: Boolean = false,
+) {
+    val interaction = remember { MutableInteractionSource() }
+    val contentAlpha = if (enabled) 1f else 0.4f
+    val spin = remember { Animatable(0f) }
+    LaunchedEffect(spinning) {
+        if (spinning) {
+            while (true) {
+                spin.animateTo(spin.value + 360f, tween(900, easing = LinearEasing))
+            }
+        } else {
+            // finish the turn it's on instead of snapping back
+            val rest = (spin.value / 360f).let { kotlin.math.ceil(it) * 360f }
+            spin.animateTo(rest, spring(dampingRatio = 0.7f, stiffness = 300f))
+        }
+    }
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .pressBounce(interaction, pressedScale = 0.97f)
+            .fillMaxWidth()
+            .height(56.dp)
+            .clip(RoundedCornerShape(20.dp))
+            .background(MenuRowSurface.copy(alpha = if (enabled) 1f else 0.6f))
+            .clickable(enabled = enabled, interactionSource = interaction, indication = null, onClick = onClick)
+            .padding(horizontal = 16.dp),
+    ) {
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier
+                .graphicsLayer { alpha = contentAlpha }
+                .size(28.dp)
+                .clip(CircleShape)
+                .background(Color(0xFFDADADA)),
+        ) {
+            Icon(
+                painter = painterResource(icon),
+                contentDescription = null,
+                tint = Color(0xFF1C1C1E),
+                modifier = Modifier
+                    .size(17.dp)
+                    .graphicsLayer { rotationZ = spin.value },
+            )
+        }
+        Spacer(Modifier.width(14.dp))
+        Text(
+            label,
+            fontSize = 17.sp,
+            fontWeight = FontWeight.Bold,
+            letterSpacing = (-0.5).sp,
+            color = Color.White.copy(alpha = contentAlpha),
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f),
+        )
+        if (hint != null) {
+            Text(hint, fontSize = 12.sp, fontWeight = FontWeight.Medium, color = Color.White.copy(alpha = 0.4f))
+        }
     }
 }
 
 const val UpdateHeadline = "Theres an update~!"
-
-@Composable
-private fun LinkRow(
-    icon: Int,
-    label: String,
-    enabled: Boolean = true,
-    onClick: () -> Unit,
-) {
-    val alpha = if (enabled) 1f else 0.35f
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(14.dp))
-            .background(MenuSurface.copy(alpha = 0.6f))
-            .clickable(
-                enabled = enabled,
-                interactionSource = remember { MutableInteractionSource() },
-                indication = null,
-                onClick = onClick,
-            )
-            .padding(horizontal = 12.dp, vertical = 12.dp)
-    ) {
-        SheetIcon(icon, tint = Color.White.copy(alpha = alpha))
-        Spacer(modifier = Modifier.width(14.dp))
-        Text(
-            text = label,
-            color = MaterialTheme.colorScheme.onSurface.copy(alpha = alpha),
-            fontSize = 13.sp,
-            fontWeight = FontWeight.SemiBold,
-        )
-    }
-}
 
 @Composable
 private fun ColumnScope.UpdateDetailContent(

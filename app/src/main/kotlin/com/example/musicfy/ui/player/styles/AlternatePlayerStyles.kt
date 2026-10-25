@@ -1,6 +1,7 @@
 package com.example.musicfy.ui.player.styles
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
@@ -32,6 +33,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
@@ -458,7 +460,7 @@ private fun androidx.compose.foundation.layout.ColumnScope.PosterText(
             ) {
                 ExpressiveLyrics(
                     lines = lines,
-                    position = position,
+                    position = position.withLyricsOffset(),
                     color = tones.ink,
                     baseSize = baseSize,
                     modifier = Modifier.fillMaxSize(),
@@ -496,19 +498,70 @@ private fun androidx.compose.foundation.layout.ColumnScope.PosterText(
     }
     Spacer(Modifier.height(gap))
     if (track.artist.isNotBlank()) {
-        Text(track.artist, color = tones.inkSoft, style = posterType(r.sp(0.034f, 12f, 15f), FontWeight.SemiBold), maxLines = 1, overflow = TextOverflow.Ellipsis)
+        CreditLine(track.artist, color = tones.inkSoft, style = posterType(r.sp(0.034f, 12f, 15f), FontWeight.SemiBold))
     }
     Spacer(Modifier.height(3.dp))
-    Text(
+    CreditLine(
         track.title,
         color = tones.inkSoft,
         style = posterType(smallTitle, FontWeight.Bold),
-        maxLines = 1,
-        overflow = TextOverflow.Ellipsis,
         modifier = Modifier
             .onPlaced { places[2] = it }
             .graphicsLayer { alpha = ((found.value - 0.6f) / 0.4f).coerceIn(0f, 1f) },
     )
+}
+
+/**
+ * One line of the poster's credits. Too long for the line, it scrolls by every few seconds and
+ * fades where it's cut, so the whole name gets read. A right-to-left name starts at its right
+ * edge and scrolls the other way.
+ */
+@Composable
+private fun CreditLine(text: String, color: Color, style: androidx.compose.ui.text.TextStyle, modifier: Modifier = Modifier) {
+    val rtl = remember(text) { isRtlText(text) }
+    // the marquee lays the text out at its full width, so this says whether it's cut
+    var fullWidth by remember { androidx.compose.runtime.mutableIntStateOf(0) }
+    androidx.compose.runtime.CompositionLocalProvider(
+        androidx.compose.ui.platform.LocalLayoutDirection provides
+            if (rtl) androidx.compose.ui.unit.LayoutDirection.Rtl else androidx.compose.ui.unit.LayoutDirection.Ltr,
+    ) {
+        Text(
+            text = text,
+            color = color,
+            style = style,
+            maxLines = 1,
+            softWrap = false,
+            onTextLayout = { fullWidth = it.size.width },
+            modifier = modifier
+                .graphicsLayer {
+                    // only a cut line needs its own layer for the fade
+                    compositingStrategy = if (fullWidth > size.width + 0.5f) {
+                        androidx.compose.ui.graphics.CompositingStrategy.Offscreen
+                    } else {
+                        androidx.compose.ui.graphics.CompositingStrategy.Auto
+                    }
+                }
+                .drawWithCache {
+                    val fade = if (rtl) {
+                        Brush.horizontalGradient(0f to Color.Transparent, 0.18f to Color.Black)
+                    } else {
+                        Brush.horizontalGradient(0.82f to Color.Black, 1f to Color.Transparent)
+                    }
+                    onDrawWithContent {
+                        drawContent()
+                        if (fullWidth > size.width + 0.5f) {
+                            drawRect(brush = fade, blendMode = androidx.compose.ui.graphics.BlendMode.DstIn)
+                        }
+                    }
+                }
+                .basicMarquee(
+                    iterations = Int.MAX_VALUE,
+                    initialDelayMillis = 2500,
+                    repeatDelayMillis = 2500,
+                    velocity = 26.dp,
+                ),
+        )
+    }
 }
 
 /**
@@ -723,7 +776,7 @@ private fun LyricsPlayerStyle(actions: StyleActions, modifier: Modifier, preview
                             } else {
                                 ExpressiveLyrics(
                                     lines = song.lines,
-                                    position = position,
+                                    position = position.withLyricsOffset(),
                                     color = tones.ink,
                                     baseSize = if (landscape) r.sp(0.092f, 28f, 46f) else r.sp(0.118f, 34f, 58f),
                                     modifier = Modifier.fillMaxSize(),

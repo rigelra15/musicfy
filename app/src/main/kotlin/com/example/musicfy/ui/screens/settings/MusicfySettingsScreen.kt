@@ -87,6 +87,11 @@ private val SettingsIndex = listOf(
     SettingsEntry("Blur", "Appearance", "appearance_settings", "blur glass performance lag strength"),
     SettingsEntry("Animation", "Appearance", "appearance_settings", "element blur animator transition animation"),
 
+    // Gesture
+    SettingsEntry("Gesture", "Gesture", "gesture_settings", "swipe slide song list left right queue library add remove"),
+    SettingsEntry("Swipe right", "Gesture", "gesture_settings", "slide song list queue library add remove action"),
+    SettingsEntry("Swipe left", "Gesture", "gesture_settings", "slide song list queue library add remove action"),
+
     // Audio Lab
     SettingsEntry("Audio Lab", "Audio Lab", "audio_lab", "sound effects equalizer fx quality"),
     SettingsEntry("Crossfade", "Audio Lab", "crossmix_settings", "crossmix automix transition gapless blend"),
@@ -123,6 +128,12 @@ private val SettingsIndex = listOf(
     SettingsEntry("Edit profile", "General", "general_settings", "username avatar account"),
     SettingsEntry("Offline mode", "General", "general_settings", "play downloaded cache offline"),
     SettingsEntry("Local song auto metadata", "General", "general_settings", "match tags id3 covers lyrics"),
+
+    // Storage
+    SettingsEntry("Storage", "Storage", "storage_settings", "space disk size cache downloads clear free junk delete"),
+    SettingsEntry("Music cache limit", "Storage", "storage_settings", "cache size limit space song stream"),
+    SettingsEntry("Manage downloads", "Storage", "storage_settings", "downloads delete remove biggest offline space"),
+    SettingsEntry("Remove all downloads", "Storage", "storage_settings", "delete clear downloads offline space"),
 
     // Experimental
     SettingsEntry("Import & sync", "Experimental", "experimental_settings", "import spotify apple music deezer tidal tunemymusic csv youtube sync export backup transfer"),
@@ -416,6 +427,18 @@ fun MusicfySettingsScreen(navController: NavController) {
                             title = "Playback",
                             iconRes = R.drawable.play,
                             onClick = { navController.navigate("playback_settings") }
+                        )
+
+                        CategoryBubble(
+                            title = "Gesture",
+                            iconRes = R.drawable.swipe,
+                            onClick = { navController.navigate("gesture_settings") }
+                        )
+
+                        CategoryBubble(
+                            title = "Storage",
+                            iconRes = R.drawable.storage,
+                            onClick = { navController.navigate("storage_settings") }
                         )
 
                         CategoryBubble(

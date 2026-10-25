@@ -177,7 +177,7 @@ class PopupSheetState {
      * current one, which recedes behind it (shrinks, peeks its handle above the new sheet) and
      * comes back forward when the new one is dismissed - so call this from inside an existing
      * frame's content to "continue into" another screen (e.g. the app-version sheet's
-     * `popup.showDonateSheet()`), and `dismiss()` to go back.
+     * "UPDATE NOW" opening the release on top), and `dismiss()` to go back.
      *
      * [onClosed] is for a caller that keeps its own "is it open" state (a declarative
      * `if (show) Thing()`): it runs once the sheet has played its exit and been removed, whether
@@ -244,6 +244,9 @@ class PopupSheetState {
 
 /** One shown sheet, from [PopupSheetState.showWithHandle]. */
 class PopupSheetHandle internal constructor(private val frame: PopupSheetState.Frame) {
+    /** True from the moment this sheet starts leaving, however it was closed. Observable. */
+    val isClosing: Boolean get() = frame.closing
+
     /** Closes this sheet with its exit animation. Nothing if it is already leaving or gone. */
     fun dismiss() {
         if (!frame.closing) frame.closing = true

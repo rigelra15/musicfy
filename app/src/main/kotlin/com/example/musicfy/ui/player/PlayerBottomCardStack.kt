@@ -111,9 +111,6 @@ private val QueueContentStart = 14.dp
 /** The card content fades as it flies, handing over to the page's copy of it. */
 private const val FlightFadeEnd = 0.38f
 
-/** How many songs after the next a taller queue card lists. */
-private const val LaterSongsShown = 3
-
 /** [height], and [extra] px more (read while measuring, so it can change every frame without recomposing). */
 private fun Modifier.heightPlus(height: Dp, extra: () -> Float): Modifier = layout { measurable, constraints ->
     val h = (height.toPx() + extra()).roundToInt().coerceAtLeast(0)
@@ -158,20 +155,18 @@ internal fun PlayerBottomCardStack(
     }
 
     val lyricsEntity by playerConnection.currentLyrics.collectAsState(initial = null)
-    val queueItems by playerConnection.queueItems.collectAsState()
-    val currentMediaItemIndex by playerConnection.currentMediaItemIndex.collectAsState()
+    // The queue in play order, with the current song's place in that order. The song's index in
+    // the player is a different number once shuffled, and reading the list with it showed a
+    // "next song" that wasn't the one about to play.
+    val queue by playerConnection.queueSnapshot.collectAsState()
 
     val lines = remember(lyricsEntity?.lyrics) {
         val raw = lyricsEntity?.lyrics
         if (raw.isNullOrBlank() || raw == LYRICS_NOT_FOUND) emptyList() else LyricsUtils.parseLyrics(raw)
     }
 
-    val nextSong = remember(queueItems, currentMediaItemIndex) {
-        queueItems.getOrNull(currentMediaItemIndex + 1)
-    }
-    // what a taller queue card lists under the next song
-    val laterSongs = remember(queueItems, currentMediaItemIndex) {
-        queueItems.drop(currentMediaItemIndex + 2).take(LaterSongsShown)
+    val nextSong = remember(queue) {
+        queue.items.getOrNull(queue.currentIndex + 1)
     }
 
     // A taller lyric card shows each line's reading and translation, so it fills them in the way the
@@ -192,9 +187,34 @@ internal fun PlayerBottomCardStack(
         return (flip + (1f - flip) * lyricsP) * (1f - queueP)
     }
 
+    // A taller deck makes only the lyric card taller, and only while it's in front. The queue card
+    // keeps its usual size with just the next song, and from behind it peeks over the tall card.
+    val lyricsGrowth: () -> Float = remember(growthProvider) {
+        { growthProvider() * (1f - queueFrontness()).coerceIn(0f, 1f) }
+    }
+    val queueGrowth: () -> Float = remember { { 0f } }
+
     // Only the order is decided in composition, and it changes once per flip - everything that
     // moves is read in layers below, so the deck doesn't recompose while it animates.
     val queueOnTop by remember { derivedStateOf { queueFrontness() >= 0.5f } }
+
+    // The front card's slot, through to the screen's bottom edge: where the expanding surface starts
+    // from and shrinks back into. The card a page grows out of is the one it's sized from - a
+    // short queue card or a tall lyric card - so the surface never jumps between the two mid-way.
+    val deckBounds = remember { arrayOfNulls<Rect>(1) }
+    fun publishCardRect() {
+        val bounds = deckBounds[0] ?: return
+        val shortCard = when (transition.linked) {
+            PlayerPage.QUEUE -> true
+            PlayerPage.LYRICS -> false
+            else -> queueOnTop
+        }
+        val growth = if (shortCard) 0f else growthProvider()
+        val cardTop = bounds.bottom - with(density) { PlayerCardHeight.toPx() } - growth
+        val slot = Rect(bounds.left, cardTop, bounds.right, bounds.bottom + with(density) { BottomBleed.toPx() })
+        if (morph.cardRect != slot) morph.cardRect = slot
+    }
+    LaunchedEffect(transition.linked, queueOnTop) { publishCardRect() }
     // The card growing into its page is drawn over the other one, at the front slot.
     val flying by remember {
         derivedStateOf {
@@ -226,12 +246,8 @@ internal fun PlayerBottomCardStack(
             .fillMaxWidth()
             .heightPlus(PlayerDeckHeight, growthProvider)
             .onGloballyPositioned { coords ->
-                // The front card's slot, through to the screen's bottom edge: where the expanding
-                // surface starts from and shrinks back into.
-                val bounds = coords.boundsInRoot()
-                val cardTop = bounds.bottom - with(density) { PlayerCardHeight.toPx() } - growthProvider()
-                val slot = Rect(bounds.left, cardTop, bounds.right, bounds.bottom + with(density) { BottomBleed.toPx() })
-                if (morph.cardRect != slot) morph.cardRect = slot
+                deckBounds[0] = coords.boundsInRoot()
+                publishCardRect()
             }
             // Directional on purpose. A plain vertical `draggable` claimed *every* drag that
             // began on the card, so touching it made the player impossible to swipe closed. The
@@ -310,14 +326,15 @@ internal fun PlayerBottomCardStack(
                     transition = transition,
                     morph = morph,
                     closedProvider = closedProvider,
-                    growthProvider = growthProvider,
+                    ownGrowth = if (page == PlayerPage.LYRICS) lyricsGrowth else queueGrowth,
+                    otherGrowth = if (page == PlayerPage.LYRICS) queueGrowth else lyricsGrowth,
                 ) {
                     if (page == PlayerPage.LYRICS) {
                         MiniLyricsTicker(
                             lines = lines,
                             loaded = lyricsEntity != null,
                             morph = morph,
-                            growthProvider = growthProvider,
+                            growthProvider = lyricsGrowth,
                             modifier = Modifier
                                 .fillMaxSize()
                                 .padding(start = LyricContentStart, end = LyricContentStart),
@@ -327,10 +344,6 @@ internal fun PlayerBottomCardStack(
                             nextTitle = nextSong?.title,
                             nextArtist = nextSong?.artist,
                             artworkUri = nextSong?.artworkUri?.toString(),
-                            later = if (tall) laterSongs.map { song ->
-                                listOfNotNull(song.title, song.artist.takeIf { it.isNotBlank() }).joinToString(" - ")
-                            } else emptyList(),
-                            growthProvider = growthProvider,
                         )
                     }
                 }
@@ -346,7 +359,9 @@ private fun BoxScope.DeckCard(
     transition: PlayerPageTransition,
     morph: CardMorphState,
     closedProvider: () -> Float,
-    growthProvider: () -> Float,
+    /** How much taller than usual this card is, px, and the other card in the deck. */
+    ownGrowth: () -> Float,
+    otherGrowth: () -> Float,
     content: @Composable () -> Unit,
 ) {
     // Growing into its page: the card's surface is handed to the expanding one (drawn by the
@@ -359,17 +374,21 @@ private fun BoxScope.DeckCard(
 
     val density = LocalDensity.current
 
+    // Behind a taller card, a card is lifted by the difference, so it still peeks over the top of
+    // the one in front instead of hiding behind it.
+    fun lift(f: Float): Float = (otherGrowth() - ownGrowth()).coerceAtLeast(0f) * BackCardScale * (1f - f)
+
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .heightPlus(PlayerCardHeight, growthProvider)
+            .heightPlus(PlayerCardHeight, ownGrowth)
             .align(Alignment.BottomCenter)
             .graphicsLayer {
                 val f = frontness()
                 val scale = mixF(BackCardScale, 1f, f)
                 scaleX = scale
                 scaleY = scale
-                translationY = -mixF(PeekOffset.toPx(), 0f, f)
+                translationY = -mixF(PeekOffset.toPx(), 0f, f) - lift(f)
                 transformOrigin = TransformOrigin(0.5f, 1f)
             }
             .drawBehind {
@@ -377,13 +396,17 @@ private fun BoxScope.DeckCard(
                 val f = frontness()
                 val inset = mixF(PeekInset.toPx(), 0f, f)
                 val corner = PlayerCardCorner.toPx()
-                // Only the strip of a back card that shows above the front one is drawn. The front
-                // card's top sits CardHeight above the bottom; this card's sits higher by the peek.
+                // Only the strip of a back card that shows above the front one is drawn. Each card's
+                // top sits its own height above the bottom (scaled when behind), raised by the peek
+                // and, behind a taller card, by the lift.
                 val scale = mixF(BackCardScale, 1f, f)
                 val otherF = 1f - f
-                val thisTop = size.height * scale + mixF(PeekOffset.toPx(), 0f, f)
-                val otherTop = size.height * mixF(BackCardScale, 1f, otherF) +
-                    mixF(PeekOffset.toPx(), 0f, otherF)
+                val otherScale = mixF(BackCardScale, 1f, otherF)
+                val baseHeight = PlayerCardHeight.toPx()
+                val thisTop = size.height * scale + mixF(PeekOffset.toPx(), 0f, f) + lift(f)
+                val otherLift = (ownGrowth() - otherGrowth()).coerceAtLeast(0f) * BackCardScale * (1f - otherF)
+                val otherTop = (baseHeight + otherGrowth()) * otherScale +
+                    mixF(PeekOffset.toPx(), 0f, otherF) + otherLift
                 val exposed = (thisTop - otherTop) / scale
                 val bottom = size.height + BottomBleed.toPx() * (1f - closedProvider().coerceIn(0f, 1f))
                 val visibleBottom = if (exposed > 0f) minOf(exposed, bottom) else bottom
@@ -489,23 +512,15 @@ private fun BoxScope.DeckCard(
 
 private fun Offset.isSpecified(): Boolean = this != Offset.Unspecified
 
+/** The queue card: just the next song, the same however tall the deck is. */
 @Composable
 private fun QueueCardContent(
     nextTitle: String?,
     nextArtist: String?,
     artworkUri: String?,
-    /** the songs after the next, for a taller card */
-    later: List<String>,
-    growthProvider: () -> Float,
 ) {
     Column(modifier = Modifier.fillMaxSize().clipToBounds()) {
         NextSongRow(nextTitle, nextArtist, artworkUri)
-        if (later.isNotEmpty()) {
-            // lined up with the next song's title, past its artwork
-            CardExtraLines(growthProvider, Modifier.padding(start = QueueContentStart + ArtworkSize + 8.dp, end = QueueContentStart)) {
-                later.forEach { CardExtraLine(it, alpha = 0.5f) }
-            }
-        }
     }
 }
 

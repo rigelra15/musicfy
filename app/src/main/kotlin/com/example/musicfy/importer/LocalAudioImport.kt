@@ -40,18 +40,7 @@ suspend fun importLocalAudio(
 
     val songId = "LOCAL_${UUID.randomUUID()}"
     val thumbnailUrl = withContext(Dispatchers.IO) {
-        metadata.embeddedArtwork?.let { artworkData ->
-            try {
-                val artworkFile = java.io.File(
-                    context.cacheDir,
-                    "artwork_${songId.hashCode()}.jpg",
-                )
-                artworkFile.writeBytes(artworkData)
-                Uri.fromFile(artworkFile).toString()
-            } catch (_: Exception) {
-                null
-            }
-        }
+        metadata.embeddedArtwork?.let { LocalArtwork.save(context, songId, it) }
     }
 
     withContext(Dispatchers.IO) {

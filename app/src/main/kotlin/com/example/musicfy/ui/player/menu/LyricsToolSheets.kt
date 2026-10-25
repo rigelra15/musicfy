@@ -639,7 +639,7 @@ private fun LanguagePickerSheet(
 }
 
 @Composable
-private fun PillButton(
+internal fun PillButton(
     label: String,
     onClick: () -> Unit,
     enabled: Boolean = true,

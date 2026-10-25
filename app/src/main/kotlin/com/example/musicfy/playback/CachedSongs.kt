@@ -13,6 +13,7 @@ import com.example.musicfy.di.PlayerCache
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -81,9 +82,7 @@ constructor(
     }
 
     /** Empties the cache, songs only partly cached too. Downloads are kept in their own cache and stay. */
-    fun clear() {
-        scope.launch { delete(playerCache.keys) }
-    }
+    fun clear(): Job = scope.launch { delete(playerCache.keys) }
 
     private fun delete(keys: Collection<String>) {
         keys.forEach { runCatching { playerCache.removeResource(it) } }

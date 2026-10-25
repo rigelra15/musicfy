@@ -11,7 +11,7 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -128,6 +128,58 @@ private const val UpcomingAlpha = 0.5f
 private const val PastAlpha = 0.24f
 private const val DefaultAlpha = 0.38f
 
+/** How bright a line rests in [state]. The lyrics share starts its flying copy from here too. */
+internal fun restingAlphaOf(state: LyricsLineState): Float = when (state) {
+    LyricsLineState.ACTIVE -> 1f
+    LyricsLineState.UPCOMING -> UpcomingAlpha
+    LyricsLineState.PAST -> PastAlpha
+    LyricsLineState.DEFAULT -> DefaultAlpha
+}
+
+/** How big a line rests in [state]: the line being sung is zoomed in a little. */
+internal fun restingScaleOf(state: LyricsLineState): Float = when (state) {
+    LyricsLineState.ACTIVE -> 1.06f
+    LyricsLineState.UPCOMING -> 0.98f
+    LyricsLineState.PAST -> 0.93f
+    LyricsLineState.DEFAULT -> 0.95f
+}
+
+/** The text style of a line without its karaoke sweep, from the theme's [base]. */
+internal fun restingLineStyle(base: androidx.compose.ui.text.TextStyle, active: Boolean, letterMotion: Boolean) =
+    base.copy(
+        fontSize = LyricsFontSize,
+        lineHeight = LyricsLineHeight,
+        fontWeight = if (active) FontWeight.Bold else FontWeight.SemiBold,
+    ).withLetterMotionFeatures(letterMotion)
+
+/**
+ * Where a line's words sit in its row: the room on each side of the tap highlight, and the
+ * highlight's own padding round the text.
+ */
+internal class LyricsLineInsets(
+    val start: androidx.compose.ui.unit.Dp,
+    val end: androidx.compose.ui.unit.Dp,
+    val top: androidx.compose.ui.unit.Dp,
+    val padH: androidx.compose.ui.unit.Dp,
+    val padV: androidx.compose.ui.unit.Dp,
+)
+
+/**
+ * The anchored side lines up with the artwork; the far side keeps room for the 1.06 zoom (padding
+ * is applied before the scale, so a line that fills the width would otherwise grow past the edge).
+ * Both give back the tap highlight's own inset.
+ */
+internal fun lyricsLineInsets(alignment: LyricsAlignment): LyricsLineInsets {
+    val anchored = LyricsHeaderArtX - LyricsTapPadH
+    val zoom = LyricsLineHorizontalPadding - LyricsTapPadH
+    val (start, end) = when (alignment) {
+        LyricsAlignment.START -> anchored to zoom
+        LyricsAlignment.CENTER -> zoom to zoom
+        LyricsAlignment.END -> zoom to anchored
+    }
+    return LyricsLineInsets(start, end, top = 16.dp - LyricsTapPadV, padH = LyricsTapPadH, padV = LyricsTapPadV)
+}
+
 private const val ActiveUnsungAlpha = 0.58f
 
 @Composable
@@ -172,20 +224,13 @@ fun LyricsGlowLine(
     /** Style 1 (words rise, held notes swell) or Style 2 (the original wave). */
     motionStyle: com.example.musicfy.constants.LyricsMotionStyle =
         com.example.musicfy.constants.LyricsMotionStyle.MOTION,
+
+    /** Holding the line: the lyrics page opens sharing with it. */
+    onLongClick: (() -> Unit)? = null,
 ) {
     val wordMotion = motionStyle == com.example.musicfy.constants.LyricsMotionStyle.MOTION
-    val targetAlpha = when (state) {
-        LyricsLineState.ACTIVE -> 1f
-        LyricsLineState.UPCOMING -> UpcomingAlpha
-        LyricsLineState.PAST -> PastAlpha
-        LyricsLineState.DEFAULT -> DefaultAlpha
-    }
-    val targetScale = when (state) {
-        LyricsLineState.ACTIVE -> 1.06f
-        LyricsLineState.UPCOMING -> 0.98f
-        LyricsLineState.PAST -> 0.93f
-        LyricsLineState.DEFAULT -> 0.95f
-    }
+    val targetAlpha = restingAlphaOf(state)
+    val targetScale = restingScaleOf(state)
 
     val animSpec = tween<Float>(durationMillis = 600)
     val alpha by animateFloatAsState(targetAlpha, animSpec, label = "lyricsLineAlpha")
@@ -228,26 +273,17 @@ fun LyricsGlowLine(
         LyricsAlignment.END -> androidx.compose.ui.Alignment.End
     }
 
-    // The anchored side lines up with the artwork; the far side keeps room for the 1.06 zoom
-    // (padding is applied before the scale below, so a line that fills the width would otherwise
-    // grow past the edge). Both give back the tap highlight's own inset.
-    val anchoredInset = LyricsHeaderArtX - LyricsTapPadH
-    val zoomInset = LyricsLineHorizontalPadding - LyricsTapPadH
-    val (startInset, endInset) = when (alignment) {
-        LyricsAlignment.START -> anchoredInset to zoomInset
-        LyricsAlignment.CENTER -> zoomInset to zoomInset
-        LyricsAlignment.END -> zoomInset to anchoredInset
-    }
+    val insets = lyricsLineInsets(alignment)
 
     Column(
         horizontalAlignment = columnAlign,
         modifier = modifier
             .fillMaxWidth()
             .padding(
-                start = startInset,
-                end = endInset,
-                top = 16.dp - LyricsTapPadV,
-                bottom = 16.dp - LyricsTapPadV,
+                start = insets.start,
+                end = insets.end,
+                top = insets.top,
+                bottom = insets.top,
             )
             .graphicsLayer {
                 this.alpha = alpha
@@ -279,7 +315,7 @@ fun LyricsGlowLine(
         modifier = Modifier
             .matchParentSize()
             .clip(LyricsTapShape)
-            .clickable(onClick = onClick),
+            .combinedClickable(onClick = onClick, onLongClick = onLongClick),
     )
     Column(
         horizontalAlignment = columnAlign,
@@ -1346,6 +1382,7 @@ private fun smoothstep(t: Float): Float {
 }
 
 /** Style 1: the bloom pass. Skipped (no render effect at all) whenever nothing is glowing. */
+@Suppress("NewApi")
 @Composable
 private fun rememberBloomModifier(
     layoutHolder: Array<TextLayoutResult?>,
@@ -1422,6 +1459,7 @@ private fun rememberBloomModifier(
 }
 
 /** Style 2: the original wave - a lift-and-zoom bell that follows the head across the letters. */
+@Suppress("NewApi")
 @Composable
 private fun rememberLegacyWaveModifier(
     layoutHolder: Array<TextLayoutResult?>,
@@ -1526,6 +1564,7 @@ private class WaveEffectCache {
     private var lastHeight = Int.MIN_VALUE
     private var effect: androidx.compose.ui.graphics.RenderEffect? = null
 
+    @Suppress("NewApi")
     fun effectFor(
         shader: Any,
         headX: Float,
@@ -1647,7 +1686,7 @@ internal fun motionCells(text: String, wordStarts: IntArray, wordEnds: IntArray)
  * Scripts whose letters are separate shapes. Joined and shaped scripts (Arabic, Devanagari, Thai...)
  * would be torn apart mid-stroke by moving their letters separately, so their words move whole.
  */
-private fun splitsIntoLetters(text: String, start: Int, end: Int): Boolean {
+internal fun splitsIntoLetters(text: String, start: Int, end: Int): Boolean {
     var i = start
     while (i < end) {
         val cp = text.codePointAt(i)

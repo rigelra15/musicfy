@@ -274,6 +274,7 @@ class MusicService :
 
     private lateinit var audioManager: AudioManager
     private var audioFocusRequest: AudioFocusRequest? = null
+    private var legacyFocusListener: AudioManager.OnAudioFocusChangeListener? = null
     private var lastAudioFocusState = AudioManager.AUDIOFOCUS_NONE
     private var wasPlayingBeforeAudioFocusLoss = false
     private var hasAudioFocus = false
@@ -442,6 +443,51 @@ class MusicService :
     /** plans this song's Crossmix hand-over, then jumps to just before it: for trying mixes out */
     fun testCrossmix() = crossmixDirector.testMix()
 
+    /** the stream each song was handed to the player as, when it wasn't the plain YouTube one */
+    private val playingStreams = java.util.concurrent.ConcurrentHashMap<String, com.example.musicfy.playback.custom.CustomStreamResult>()
+
+    /** Lyrics auto offset; the lyrics offset sheet starts it and shows how it's going. */
+    val lyricsAutoSync by lazy {
+        com.example.musicfy.lyrics.LyricsAutoSync(
+            dataSourceFactory = { createDataSourceFactory() },
+            saveOffset = { songId, offsetMs -> database.query { updateLyricsOffset(songId, offsetMs) } },
+            onUnwatchedResult = ::announceLyricsSync,
+        )
+    }
+
+    /** Lines the playing song's lyrics up with its singing: see [com.example.musicfy.lyrics.LyricsAutoSync]. */
+    fun autoSyncLyrics(lines: List<com.example.musicfy.lyrics.LyricsEntry>, currentOffsetMs: Int) {
+        val item = player.currentMediaItem ?: return
+        val (uri, key) = lyricsAudioSource(item)
+        val durationMs = player.duration.takeIf { it != C.TIME_UNSET && it > 0 }
+            ?: player.currentMetadata?.duration?.times(1_000L) ?: 0L
+        lyricsAutoSync.start(item.mediaId, uri, key, durationMs, lines, currentOffsetMs)
+    }
+
+    /**
+     * What auto offset listens to: the very stream the player is playing, so the timing it finds
+     * is the timing heard. A source module's stream that's a playlist of segments or locked (HLS,
+     * DASH, DRM) can't be read as one file; then it's the song's YouTube stream, which nearly
+     * always has the same timing.
+     */
+    private fun lyricsAudioSource(item: androidx.media3.common.MediaItem): Pair<android.net.Uri, String> {
+        val stream = playingStreams[item.mediaId]
+        if (stream != null && !stream.isHls && !stream.isDash && stream.widevineLicense == null && stream.decryptionKey == null) {
+            return stream.streamUrl.toUri() to (stream.cacheKey ?: item.mediaId)
+        }
+        return (item.localConfiguration?.uri ?: item.mediaId.toUri()) to item.mediaId
+    }
+
+    /** A sync that finished with its sheet closed says how it went in the banner. */
+    private fun announceLyricsSync(state: com.example.musicfy.lyrics.LyricsAutoSync.State) {
+        val text = when (state) {
+            is com.example.musicfy.lyrics.LyricsAutoSync.State.Synced -> "Lyrics synced to the singing"
+            is com.example.musicfy.lyrics.LyricsAutoSync.State.Failed -> state.message
+            else -> return
+        }
+        Handler(Looper.getMainLooper()).post { showBanner(text) }
+    }
+
     private data class CrossfadeConfig(
         val mode: CrossmixMode,
         val enabled: Boolean,
@@ -534,14 +580,16 @@ class MusicService :
         playerInitialized.value = false
 
         try {
-            val nm = getSystemService(NotificationManager::class.java)
-            nm?.createNotificationChannel(
-                NotificationChannel(
-                    CHANNEL_ID,
-                    getString(R.string.music_player),
-                    NotificationManager.IMPORTANCE_LOW
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                val nm = getSystemService(NotificationManager::class.java)
+                nm?.createNotificationChannel(
+                    NotificationChannel(
+                        CHANNEL_ID,
+                        getString(R.string.music_player),
+                        NotificationManager.IMPORTANCE_LOW
+                    )
                 )
-            )
+            }
             val pending = PendingIntent.getActivity(
                 this,
                 0,
@@ -1033,6 +1081,11 @@ class MusicService :
                             }
                         } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && hapticVibrator.hasAmplitudeControl()) {
                             hapticVibrator.vibrate(VibrationEffect.createOneShot(20, amplitude))
+                        } else if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O && isBassKick) {
+                            // Android 7 has no VibrationEffect, so it gets a plain buzz on the kick only.
+                            // Newer phones without amplitude control stay silent, as they always have.
+                            @Suppress("DEPRECATION")
+                            hapticVibrator.vibrate(20)
                         }
                     }
                 } catch (e: Exception) {
@@ -1103,18 +1156,25 @@ class MusicService :
     }
 
     private fun setupAudioFocusRequest() {
-        audioFocusRequest = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
-            .setAudioAttributes(
-                android.media.AudioAttributes.Builder()
-                    .setUsage(android.media.AudioAttributes.USAGE_MEDIA)
-                    .setContentType(android.media.AudioAttributes.CONTENT_TYPE_MUSIC)
-                    .build()
-            )
-            .setOnAudioFocusChangeListener { focusChange ->
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            audioFocusRequest = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
+                .setAudioAttributes(
+                    android.media.AudioAttributes.Builder()
+                        .setUsage(android.media.AudioAttributes.USAGE_MEDIA)
+                        .setContentType(android.media.AudioAttributes.CONTENT_TYPE_MUSIC)
+                        .build()
+                )
+                .setOnAudioFocusChangeListener { focusChange ->
+                    handleAudioFocusChange(focusChange)
+                }
+                .setAcceptsDelayedFocusGain(true)
+                .build()
+        } else {
+            @Suppress("DEPRECATION")
+            legacyFocusListener = AudioManager.OnAudioFocusChangeListener { focusChange ->
                 handleAudioFocusChange(focusChange)
             }
-            .setAcceptsDelayedFocusGain(true)
-            .build()
+        }
     }
 
     private fun handleAudioFocusChange(focusChange: Int) {
@@ -1189,24 +1249,37 @@ class MusicService :
     private fun requestAudioFocus(): Boolean {
         if (hasAudioFocus) return true
 
-        audioFocusRequest?.let { request ->
-            val result = audioManager.requestAudioFocus(request)
-            hasAudioFocus = result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED
-            // granted straight back after a duck: no GAIN callback follows, and the player stayed
-            // at a fifth of its volume for good
-            if (hasAudioFocus && lastAudioFocusState == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK) {
-                player.volume = if (isMuted.value) 0f else playerVolume.value
-                lastAudioFocusState = AudioManager.AUDIOFOCUS_GAIN
-            }
-            return hasAudioFocus
+        val result = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val request = audioFocusRequest ?: return false
+            audioManager.requestAudioFocus(request)
+        } else {
+            @Suppress("DEPRECATION")
+            audioManager.requestAudioFocus(
+                legacyFocusListener,
+                AudioManager.STREAM_MUSIC,
+                AudioManager.AUDIOFOCUS_GAIN
+            )
         }
-        return false
+        hasAudioFocus = result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED
+        // granted straight back after a duck: no GAIN callback follows, and the player stayed
+        // at a fifth of its volume for good
+        if (hasAudioFocus && lastAudioFocusState == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK) {
+            player.volume = if (isMuted.value) 0f else playerVolume.value
+            lastAudioFocusState = AudioManager.AUDIOFOCUS_GAIN
+        }
+        return hasAudioFocus
     }
 
     private fun abandonAudioFocus() {
         if (hasAudioFocus) {
-            audioFocusRequest?.let { request ->
-                audioManager.abandonAudioFocusRequest(request)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                audioFocusRequest?.let { request ->
+                    audioManager.abandonAudioFocusRequest(request)
+                    hasAudioFocus = false
+                }
+            } else {
+                @Suppress("DEPRECATION")
+                legacyFocusListener?.let { audioManager.abandonAudioFocus(it) }
                 hasAudioFocus = false
             }
         }
@@ -1415,6 +1488,7 @@ class MusicService :
             causes.any { it is java.io.FileNotFoundException } -> "stream not found"
             causes.any { it is androidx.media3.datasource.cache.Cache.CacheException } -> "cache error"
             e.errorCode == PlaybackException.ERROR_CODE_IO_UNSPECIFIED -> "stream interrupted"
+            isContainerParseError(e) -> "the audio file came back broken"
             else -> e.errorCodeName.removePrefix("ERROR_CODE_").lowercase().replace('_', ' ')
         }
     }
@@ -2827,6 +2901,8 @@ class MusicService :
                 format?.sampleRate,
             )
         }
+        // a module's copy that won't parse would fail the same way every time that module is asked
+        if (mediaId != null && isContainerParseError(error)) dropModuleCache(mediaId)
         if (mediaId != null && forceFallBack(mediaId, announce = !decoderNotices.containsKey(mediaId))) return
 
         if (mediaId != null && hasExceededRetryLimit(mediaId)) {
@@ -2869,8 +2945,11 @@ class MusicService :
             }
         }
 
+        // A file that won't parse is almost always two streams glued together in the cache, which
+        // the clear above has just dropped: a fresh try plays. It used to give up on the spot.
         if (error.errorCode == PlaybackException.ERROR_CODE_IO_UNSPECIFIED ||
-            error.errorCode == PlaybackException.ERROR_CODE_IO_BAD_HTTP_STATUS) {
+            error.errorCode == PlaybackException.ERROR_CODE_IO_BAD_HTTP_STATUS ||
+            isContainerParseError(error)) {
             Timber.tag(TAG).d("IO error detected (${error.errorCode}), attempting recovery")
             handleGenericIOError(mediaId)
             return
@@ -2900,6 +2979,17 @@ class MusicService :
                 Timber.tag(TAG).e(e, "Failed to clear decryption caches for $mediaId")
             }
         }
+    }
+
+    private fun isContainerParseError(error: PlaybackException) =
+        error.errorCode == PlaybackException.ERROR_CODE_PARSING_CONTAINER_MALFORMED ||
+            error.errorCode == PlaybackException.ERROR_CODE_PARSING_CONTAINER_UNSUPPORTED
+
+    /** Every source module's cached copy of [mediaId], which lives under its own key. */
+    private fun dropModuleCache(mediaId: String) {
+        playerCache.keys
+            .filter { it.startsWith(ModuleCacheKeyPrefix) && it.endsWith("|$mediaId") }
+            .forEach { key -> runCatching { playerCache.removeResource(key) } }
     }
 
     private fun hasExceededRetryLimit(mediaId: String): Boolean {
@@ -3233,6 +3323,50 @@ class MusicService :
      * stored content length. Guessing a chunk when neither is known makes a partially cached
      * track look complete, which is how replay used to break.
      */
+    /**
+     * Whether [cache] has every byte [dataSpec] asks for. The cache's own record of the file's size
+     * comes first. The format row is rewritten each time the song streams, so a finished download
+     * checked against another stream's size looked incomplete, and the song went online for the
+     * rest: "connection failed" offline, or the wrong stream glued on.
+     */
+    private fun holdsWhole(cache: SimpleCache, mediaId: String, dataSpec: DataSpec): Boolean {
+        val length = when {
+            dataSpec.length >= 0 -> dataSpec.length
+            else -> runCatching {
+                androidx.media3.datasource.cache.ContentMetadata.getContentLength(cache.getContentMetadata(mediaId))
+            }.getOrNull()?.takeIf { it > 0L }?.let { (it - dataSpec.position).coerceAtLeast(1L) }
+                ?: requiredCachedLength(mediaId, dataSpec)
+        }
+        return cache.isCached(mediaId, dataSpec.position, length)
+    }
+
+    /**
+     * YouTube can hand back a different file for the same song from one lookup to the next: Opus
+     * on Wi-Fi, AAC on mobile data, or whatever another client offers. Both are cached under the
+     * song's id, so the start of one got glued onto the rest of the other and the player gave up
+     * with "parsing container malformed". A different itag or length means a different file, so
+     * the old bytes go.
+     */
+    private fun dropStaleCachedBytes(mediaId: String, itag: Int, contentLength: Long?) {
+        if (playerCache.getCachedSpans(mediaId).isEmpty()) return
+        val freshLength = contentLength ?: 0L
+        val cachedLength = runCatching {
+            androidx.media3.datasource.cache.ContentMetadata.getContentLength(playerCache.getContentMetadata(mediaId))
+        }.getOrDefault(C.LENGTH_UNSET.toLong())
+        val previous = runCatching { runBlocking(Dispatchers.IO) { database.format(mediaId).first() } }.getOrNull()
+        val sameFile = when {
+            cachedLength > 0 && freshLength > 0 -> cachedLength == freshLength
+            previous != null -> previous.itag == itag &&
+                (previous.contentLength <= 0 || freshLength <= 0 || previous.contentLength == freshLength)
+            // nothing to compare against: a bad splice is still caught by the parse-error retry
+            else -> true
+        }
+        if (sameFile) return
+        Timber.tag(TAG).i("Cached bytes for $mediaId are from another stream (itag ${previous?.itag} -> $itag), dropping them")
+        runCatching { playerCache.removeResource(mediaId) }
+            .onFailure { Timber.tag(TAG).w(it, "Couldn't drop stale cached bytes for $mediaId") }
+    }
+
     private fun requiredCachedLength(mediaId: String, dataSpec: DataSpec): Long {
         if (dataSpec.length >= 0) return dataSpec.length
         val contentLength = runCatching {
@@ -3248,13 +3382,15 @@ class MusicService :
     private fun notifyPlaybackError(title: String, message: String) {
         runCatching {
             val nm = getSystemService(NotificationManager::class.java) ?: return
-            nm.createNotificationChannel(
-                android.app.NotificationChannel(
-                    ERROR_CHANNEL_ID,
-                    getString(R.string.playback_error_channel_name),
-                    NotificationManager.IMPORTANCE_DEFAULT,
-                ),
-            )
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                nm.createNotificationChannel(
+                    android.app.NotificationChannel(
+                        ERROR_CHANNEL_ID,
+                        getString(R.string.playback_error_channel_name),
+                        NotificationManager.IMPORTANCE_DEFAULT,
+                    ),
+                )
+            }
             val notification = NotificationCompat.Builder(this, ERROR_CHANNEL_ID)
                 .setSmallIcon(R.drawable.musicfy_notification)
                 .setContentTitle(title)
@@ -3298,11 +3434,7 @@ class MusicService :
             }
 
             if (!shouldBypassCache) {
-                val requiredLength = requiredCachedLength(mediaId, dataSpec)
-
-                if (downloadCache.isCached(mediaId, dataSpec.position, requiredLength) ||
-                    playerCache.isCached(mediaId, dataSpec.position, requiredLength)
-                ) {
+                if (holdsWhole(downloadCache, mediaId, dataSpec) || holdsWhole(playerCache, mediaId, dataSpec)) {
                     scope.launch(Dispatchers.IO) { recoverSong(mediaId) }
                     return@Factory dataSpec
                 }
@@ -3379,6 +3511,8 @@ class MusicService :
                     Timber.tag(TAG).w("No loudness data available from YouTube for video: $mediaId")
                 }
 
+                // before the row below forgets which file the cached bytes came from
+                dropStaleCachedBytes(mediaId, format.itag, format.contentLength)
                 database.query {
                     upsert(
                         FormatEntity(
@@ -3496,7 +3630,11 @@ class MusicService :
                         }
                         factory
                     },
-                    fetcherAction = { mediaId -> deviceStream(mediaItem) ?: routeStream(mediaId) },
+                    fetcherAction = { mediaId ->
+                        (deviceStream(mediaItem) ?: routeStream(mediaId)).also { stream ->
+                            if (stream != null) playingStreams[mediaId] = stream else playingStreams.remove(mediaId)
+                        }
+                    },
                     onSourceResolved = { mediaId, source ->
                         resolvedStreamSources[mediaId] = source
                         Handler(Looper.getMainLooper()).post {
@@ -3888,6 +4026,7 @@ class MusicService :
 
         val items = (0 until player.mediaItemCount).map { player.getMediaItemAt(it) }
         secPlayer.setMediaItems(items)
+        copyPlayOrder(from = player, to = secPlayer)
         secPlayer.playbackParameters = player.playbackParameters
         secPlayer.seekTo(targetIndex, 0L)
         secPlayer.volume = 0f
@@ -3897,11 +4036,25 @@ class MusicService :
         secPlayer.playWhenReady = true
 
         performCrossfadeSwap()
+    }
 
-        if (savedShuffleEnabled) {
-            val shufflePlaylistFirst = dataStore.get(ShufflePlaylistFirstKey, false)
-            applyShuffleOrder(player.currentMediaItemIndex, player.mediaItemCount, shufflePlaylistFirst)
+    /**
+     * Gives a player taking over the same shuffle order as the one handing over, so the queue the
+     * user sees carries on as it was. Each crossfade used to reshuffle everything from the new
+     * song, which brought songs that had already played back into the queue and changed what
+     * "next song" showed after every song.
+     */
+    private fun copyPlayOrder(from: Player, to: ExoPlayer) {
+        val timeline = from.currentTimeline
+        if (timeline.isEmpty || timeline.windowCount != to.mediaItemCount) return
+        val order = ArrayList<Int>(timeline.windowCount)
+        var index = timeline.getFirstWindowIndex(true)
+        while (index != C.INDEX_UNSET && order.size < timeline.windowCount) {
+            order += index
+            index = timeline.getNextWindowIndex(index, REPEAT_MODE_OFF, true)
         }
+        if (order.size != timeline.windowCount) return
+        to.setShuffleOrder(DefaultShuffleOrder(order.toIntArray(), System.currentTimeMillis()))
     }
 
     private fun performCrossfadeSwap() {
@@ -3916,17 +4069,25 @@ class MusicService :
 
         fadingPlayer?.removeListener(this)
         fadingPlayer?.removeListener(sleepTimer)
+        // The old player has the whole queue too. If the new song took a moment to load, the fade
+        // waited while the old one finished its song and rolled on into the next one - the same
+        // song the new player was starting - so it played twice over itself.
+        fadingPlayer?.pauseAtEndOfMediaItems = true
 
-        player.addListener(object : Player.Listener {
+        nextPlayer.addListener(object : Player.Listener {
             override fun onIsPlayingChanged(isPlaying: Boolean) {
-                if (isCrossfading && fadingPlayer != null) {
-                    if (isPlaying) {
-                        fadingPlayer?.play()
-                    } else {
-                        fadingPlayer?.pause()
-                    }
+                val out = fadingPlayer
+                if (!isCrossfading || out == null) {
+                    nextPlayer.removeListener(this)
+                    return
+                }
+                // pause and resume both sides together; an old song that has played out stays put
+                if (isPlaying) {
+                    val finished = out.playbackState == Player.STATE_ENDED ||
+                        (out.duration > 0 && out.currentPosition >= out.duration - 250)
+                    if (!finished) out.play()
                 } else {
-                    player.removeListener(this)
+                    out.pause()
                 }
             }
         })
@@ -4191,6 +4352,7 @@ class MusicService :
             val incoming = createExoPlayer(publish = false)
             val items = (0 until player.mediaItemCount).map { player.getMediaItemAt(it) }
             incoming.setMediaItems(items)
+            copyPlayOrder(from = player, to = incoming)
             incoming.repeatMode = player.repeatMode
             incoming.shuffleModeEnabled = player.shuffleModeEnabled
             val base = player.playbackParameters
@@ -4253,11 +4415,6 @@ class MusicService :
                 onMediaItemTransition(incoming.currentMediaItem, Player.MEDIA_ITEM_TRANSITION_REASON_AUTO)
             } finally {
                 promotingCrossmix = false
-            }
-
-            if (incoming.shuffleModeEnabled) {
-                val shufflePlaylistFirst = dataStore.get(ShufflePlaylistFirstKey, false)
-                applyShuffleOrder(incoming.currentMediaItemIndex, incoming.mediaItemCount, shufflePlaylistFirst)
             }
         }
 

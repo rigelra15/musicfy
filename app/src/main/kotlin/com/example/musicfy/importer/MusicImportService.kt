@@ -147,7 +147,7 @@ class MusicImportService @Inject constructor(
             }
             val fresh = steps.record.newTracks(playlist.id, read.tracks)
             _progress.update { it.copy(totalTracks = it.totalTracks + fresh.size) }
-            val added = steps.topUp(TrackMatcher(), playlist, fresh, context.isUserLoggedIn(), intoLibrary = owner != null)
+            val added = steps.topUp(steps.newMatcher(), playlist, fresh, context.isUserLoggedIn(), intoLibrary = owner != null)
             steps.record.remember(steps.source, playlist.id, read.tracks, read.origin)
             _progress.update { progress ->
                 progress.copy(resync = progress.resync?.let {

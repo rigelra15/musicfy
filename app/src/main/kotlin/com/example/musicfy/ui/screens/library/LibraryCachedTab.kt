@@ -15,7 +15,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.musicfy.db.entities.Song
 import com.example.musicfy.extensions.toMediaItem
-import com.example.musicfy.ui.component.SwipeActionsBox
+import com.example.musicfy.ui.component.SongSwipeBox
 import com.example.musicfy.ui.component.librarySwipeAction
 import com.example.musicfy.ui.component.queueSwipeAction
 
@@ -56,10 +56,10 @@ internal fun LazyListScope.libraryCachedTab(
 
     items(data.songs, key = { "cached_song_${it.id}" }, contentType = { "cached_song" }) { song ->
         // left queues the song, right adds it to the library or takes it out, as on Songs
-        SwipeActionsBox(
+        SongSwipeBox(
             slab = false,
-            start = { librarySwipeAction(song.song) },
-            end = { queueSwipeAction { song.toMediaItem() } },
+            library = { librarySwipeAction(song.song) },
+            queue = { queueSwipeAction { song.toMediaItem() } },
         ) {
             val active = nowPlayingId() == song.id
             LibraryListRow(

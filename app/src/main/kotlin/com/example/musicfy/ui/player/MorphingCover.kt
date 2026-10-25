@@ -1570,6 +1570,7 @@ private fun CoverCanvasLayer(
     progressProvider: () -> Float,
 ) {
     val context = LocalContext.current
+    val playerConnection = LocalPlayerConnection.current
     var canvasArtwork by remember(trackInfo.mediaId) { mutableStateOf<CanvasArtwork?>(null) }
     val canvasEnabled = rememberPreference(CanvasThumbnailAnimationKey, defaultValue = true).value && !alternateStyle
     val canvasWifiOnly by rememberPreference(CanvasWifiOnlyKey, defaultValue = true)
@@ -1591,11 +1592,14 @@ private fun CoverCanvasLayer(
         val normTitle = normalizeCanvasSongTitle(titleStr)
         val normArtist = normalizeCanvasArtistName(artistStr)
         if (normTitle.length < 2 || normArtist.length < 2) return@LaunchedEffect
+        // the song's length tells a studio recording from a live one with the same title
+        val durationSec = playerConnection?.mediaMetadata?.value
+            ?.takeIf { it.id == mediaId }?.duration?.takeIf { it > 0 }
 
         val res = withContext(Dispatchers.IO) {
-            MonochromeApiCanvas.getBySongArtist(normTitle, normArtist, null)
+            MonochromeApiCanvas.getBySongArtist(normTitle, normArtist, null, durationSec)
                 ?.takeIf { !it.preferredAnimationUrl.isNullOrBlank() }
-            ?: AppleMusicCanvasProvider.getBySongArtist(normTitle, normArtist, null, "us")
+            ?: AppleMusicCanvasProvider.getBySongArtist(normTitle, normArtist, null, "us", durationSec)
                 ?.takeIf { !it.preferredAnimationUrl.isNullOrBlank() }
         }
         if (res != null) {

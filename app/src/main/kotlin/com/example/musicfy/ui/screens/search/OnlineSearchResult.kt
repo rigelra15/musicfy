@@ -87,7 +87,7 @@ import com.example.musicfy.playback.queues.YouTubeQueue
 import com.example.musicfy.ui.component.GlassState
 import com.example.musicfy.ui.component.LocalMenuState
 import com.example.musicfy.ui.component.RoundedHighlight
-import com.example.musicfy.ui.component.SwipeActionsBox
+import com.example.musicfy.ui.component.SongSwipeBox
 import com.example.musicfy.ui.component.librarySwipeAction
 import com.example.musicfy.ui.component.queueSwipeAction
 import com.example.musicfy.ui.component.glassRoot
@@ -597,11 +597,11 @@ private fun ResultRow(
     }
 
     Column {
-        // songs slide: left to queue, right to save to the library
+        // songs slide to queue or save to the library; Settings > Gesture sets which side does which
         if (item is SongItem) {
-            SwipeActionsBox(
-                start = { librarySwipeAction(item) },
-                end = { queueSwipeAction { item.toMediaItem() } },
+            SongSwipeBox(
+                library = { librarySwipeAction(item) },
+                queue = { queueSwipeAction { item.toMediaItem() } },
             ) {
                 row()
             }

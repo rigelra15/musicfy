@@ -1,6 +1,7 @@
 package com.example.musicfy.ui.player.studio
 
 import android.graphics.Bitmap
+import android.os.Build
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
@@ -183,7 +184,11 @@ fun Modifier.studioCaptureSource(capture: StudioCapture?): Modifier {
 /** a soft copy of [image]: an eighth of the size, box-blurred three times */
 internal fun softBackdrop(image: ImageBitmap): ImageBitmap {
     val source = image.asAndroidBitmap().let {
-        if (it.config == Bitmap.Config.HARDWARE) it.copy(Bitmap.Config.ARGB_8888, false) else it
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && it.config == Bitmap.Config.HARDWARE) {
+            it.copy(Bitmap.Config.ARGB_8888, false)
+        } else {
+            it
+        }
     }
     val w = (source.width / 8).coerceAtLeast(1)
     val h = (source.height / 8).coerceAtLeast(1)

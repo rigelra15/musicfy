@@ -196,7 +196,8 @@ fun LibraryHomeScreen(
                         onManage = {
                             menuState.showManageLocalSheet(
                                 viewModel = importViewModel,
-                                onRescan = localActions::scanPhone,
+                                onRescan = localActions::rescan,
+                                onAddFolder = localActions::pickFolder,
                                 onRemoveFromList = { menuState.showRemoveLocalSheet(local.files, importViewModel) },
                             )
                         },

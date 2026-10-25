@@ -66,6 +66,10 @@ class LocalImportService @Inject constructor(
     fun importDeviceSongs(songs: List<DeviceSong>): Boolean =
         start(songs.map { Pending(it.uri, it.title, it.artist, it.artworkUri, keepAccess = false) })
 
+    /** Files found in a music folder the user picked. Access comes with the folder, so none is taken per file. */
+    fun importFolderFiles(uris: List<Uri>): Boolean =
+        start(uris.map { Pending(it, title = "", subtitle = null, artworkUrl = null, keepAccess = false) })
+
     /** Forgets a finished import, so the progress card and sheet start clean next time. */
     fun clearFinished() {
         if (!isRunning) _batch.value = TransferBatch()

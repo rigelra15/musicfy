@@ -1595,6 +1595,9 @@ interface DatabaseDao {
     @Update
     fun update(song: SongEntity)
 
+    @Query("UPDATE song SET lyricsOffset = :offsetMs WHERE id = :songId")
+    fun updateLyricsOffset(songId: String, offsetMs: Int)
+
     // ---- imported music ----
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)

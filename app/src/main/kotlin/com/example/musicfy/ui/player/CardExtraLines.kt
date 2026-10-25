@@ -22,23 +22,25 @@ import androidx.compose.ui.unit.sp
  * the card's bottom, which is why a line shows fully exactly when the card has grown past its
  * bottom.
  */
-private val ExtraLinesTuck = 10.dp
+internal val ExtraLinesTuck = 10.dp
 
 /** A line fades in over this much of the card's growth. */
 private val ExtraLineFade = 14.dp
 
 /**
- * More lines under a card's own row, for when the card is pulled taller in the player editor: the
- * lyric card's reading, translation and next line, the queue card's songs after the next. Each line
- * fades in as the card grows enough to show all of it, so none is ever cut in half. Put it right
- * under the card's row.
+ * More lines under the lyric card's own row, for when the card is pulled taller in the player
+ * editor: the line's reading and translation, then the lines after it. Each line fades in as the
+ * card grows enough to show all of it, so none is ever cut in half. Put it right under the card's row.
  *
- * [growthProvider] (how much taller than usual the card is, px) is read only while drawing.
+ * [growthProvider] (how much taller than usual the card is, px) is read only while drawing, and
+ * so is [startProvider]: how far below the row these lines start (px), when other extra lines
+ * sit above them.
  */
 @Composable
 internal fun CardExtraLines(
     growthProvider: () -> Float,
     modifier: Modifier = Modifier,
+    startProvider: () -> Float = { 0f },
     content: @Composable () -> Unit,
 ) {
     Layout(content = content, modifier = modifier.offset(y = -ExtraLinesTuck)) { measurables, constraints ->
@@ -52,7 +54,7 @@ internal fun CardExtraLines(
             placeables.forEach { placeable ->
                 val bottom = (y + placeable.height).toFloat()
                 placeable.placeWithLayer(0, y) {
-                    alpha = ((growthProvider() - bottom) / fadePx + 1f).coerceIn(0f, 1f)
+                    alpha = ((growthProvider() - startProvider() - bottom) / fadePx + 1f).coerceIn(0f, 1f)
                 }
                 y += placeable.height
             }
@@ -67,6 +69,7 @@ internal fun CardExtraLine(
     alpha: Float,
     bold: Boolean = false,
     italic: Boolean = false,
+    modifier: Modifier = Modifier,
 ) {
     Text(
         text = text,
@@ -77,5 +80,6 @@ internal fun CardExtraLine(
         maxLines = 1,
         softWrap = false,
         overflow = TextOverflow.Ellipsis,
+        modifier = modifier,
     )
 }

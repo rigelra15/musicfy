@@ -12,6 +12,8 @@ import com.example.musicfy.importer.DeviceMusicScanner
 import com.example.musicfy.importer.DeviceSong
 import com.example.musicfy.importer.ImportHistory
 import com.example.musicfy.importer.ImportSource
+import com.example.musicfy.importer.LocalArtwork
+import com.example.musicfy.importer.LocalFolders
 import com.example.musicfy.importer.LocalImportService
 import androidx.media3.exoplayer.offline.DownloadService
 import com.example.musicfy.models.TransferBatch
@@ -65,9 +67,72 @@ class LibraryImportViewModel @Inject constructor(
         if (_scan.value == DeviceScan.Scanning) return
         _scan.value = DeviceScan.Scanning
         viewModelScope.launch {
-            val known = withContext(Dispatchers.IO) { database.localUris().toSet() }
+            val known = withContext(Dispatchers.IO) { knownLocalUris(withMediaStore = true) }
             _scan.value = DeviceScan.Found(DeviceMusicScanner.scan(context, known))
         }
+    }
+
+    /**
+     * Every file already in the library. With [withMediaStore], songs that came in through a
+     * picked folder also count by their MediaStore uri, so the phone-wide scan doesn't offer them
+     * a second time.
+     */
+    private fun knownLocalUris(withMediaStore: Boolean): Set<String> {
+        val uris = database.localUris()
+        if (!withMediaStore) return uris.toSet()
+        return uris.toHashSet().apply {
+            uris.filter { it.startsWith("content://") && !it.startsWith("content://media/") }.forEach { uri ->
+                LocalFolders.mediaStoreUri(context, Uri.parse(uri))?.let { add(it.toString()) }
+            }
+        }
+    }
+
+    /**
+     * A music folder the user just picked: kept for later re-scans, and its songs that aren't in
+     * the library yet are imported now. Returns false when there was nothing to start.
+     */
+    suspend fun addFolder(tree: Uri): Boolean {
+        val files = withContext(Dispatchers.IO) {
+            runCatching { LocalFolders.add(context, tree) }.getOrNull() ?: return@withContext null
+            LocalFolders.newAudioFiles(context, tree, knownLocalUris(withMediaStore = false))
+        }
+        if (files == null) {
+            TopToaster.show("Couldn't keep access to that folder. Try picking it again.", iconRes = R.drawable.library_music)
+            return false
+        }
+        return startFolderImport(files, emptyMessage = "Every song in that folder is already in your library")
+    }
+
+    /**
+     * Re-scan: brings back covers that went missing, then reads the saved music folders again
+     * for new files. Returns true when an import started.
+     */
+    suspend fun refreshLocal(): Boolean {
+        val (fixedCovers, files) = withContext(Dispatchers.IO) {
+            val fixed = LocalArtwork.repair(context, database, includeMissing = true)
+            val known = knownLocalUris(withMediaStore = false)
+            fixed to LocalFolders.read(context).flatMap { LocalFolders.newAudioFiles(context, it, known) }.distinct()
+        }
+        if (fixedCovers > 0) {
+            TopToaster.show(if (fixedCovers == 1) "Brought back 1 cover" else "Brought back $fixedCovers covers", iconRes = R.drawable.library_music)
+        }
+        if (files.isEmpty()) return false
+        return startFolderImport(files, emptyMessage = null)
+    }
+
+    /** True if Musicfy has music folders the user picked. */
+    fun hasFolders(): Boolean = LocalFolders.read(context).isNotEmpty()
+
+    private fun startFolderImport(files: List<Uri>, emptyMessage: String?): Boolean {
+        if (files.isEmpty()) {
+            emptyMessage?.let { TopToaster.show(it, iconRes = R.drawable.library_music) }
+            return false
+        }
+        if (!localImport.importFolderFiles(files)) {
+            TopToaster.show("An import is still running. Try again once it's done.", iconRes = R.drawable.library_music)
+            return false
+        }
+        return true
     }
 
     fun importPicked(uris: List<Uri>): Boolean = localImport.importPicked(uris)

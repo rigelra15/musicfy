@@ -1441,6 +1441,9 @@ val SubSettingsRoutes = setOf(
     "youtube_sync",
     "stats",
     "developer_space",
+    "developer_playground",
+    "storage_settings",
+    "gesture_settings",
     // Audio Lab keeps the bar, as in its designs
     "audio_lab",
     "equalizer",

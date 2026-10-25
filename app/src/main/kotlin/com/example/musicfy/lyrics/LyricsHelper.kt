@@ -269,7 +269,8 @@ constructor(
         }
 
         val chineseSong = isChineseSong(referenceScript, candidates)
-        val pool = eligible(candidates, chineseSong)
+        val songLanguage = songLanguage(referenceScript, candidates)
+        val pool = eligible(candidates, chineseSong, songLanguage)
         if (pool.isEmpty()) return null
 
         // what most of the sources say the song is in, asked only when the song itself doesn't say
@@ -410,6 +411,11 @@ constructor(
      *
      *  1. Every source but the Chinese services (KuGou, NetEase, QQ Music) and YouTube's auto
      *     captions; the Chinese services too for a Chinese song, since that is what they are good at.
+     *     For any other song, their word-timed lyrics join in too when they're in the song's own
+     *     language ([songLanguage]). They're often the only word timing there is for a Japanese,
+     *     Korean or English song, and kept out they lost to anyone's line-timed lyrics. Their usual
+     *     mistakes - a Chinese translation, another song with a similar name in another language -
+     *     don't pass that check.
      *  2. The Chinese services for any other song, and then only lyrics of theirs that aren't
      *     Chinese. They answer songs in every language with Chinese translations, or a different
      *     song with a similar name, often enough that Chinese from them is not believed for a song
@@ -419,12 +425,43 @@ constructor(
     private fun eligible(
         candidates: List<ProviderCandidate>,
         chineseSong: Boolean,
+        songLanguage: String?,
     ): List<ProviderCandidate> {
         val (chinese, rest) = candidates.partition { it.providerName in ChineseSources }
         val (captions, main) = rest.partition { it.providerName == YouTubeCaptionsLyricsProvider.name }
-        return (if (chineseSong) main + chinese else main)
+        val wordTimedOriginals = chinese.filter { c ->
+            c.sync == LyricsUtils.SyncKind.WORD && c.script != LyricsUtils.Script.HAN &&
+                songLanguage != null && languageKey(c, songLanguage) == songLanguage
+        }
+        return (if (chineseSong) main + chinese else main + wordTimedOriginals)
             .ifEmpty { chinese.filter { it.script != LyricsUtils.Script.HAN } }
             .ifEmpty { captions }
+    }
+
+    /**
+     * What language the song is sung in, as a language key (see [languageKeys]), from evidence
+     * that isn't the Chinese services': the song's own title, artist or album script, or YouTube's
+     * lyrics for the video ([referenceScript]), or else what most of the other sources came back
+     * in. Null when nothing says.
+     */
+    private fun songLanguage(referenceScript: LyricsUtils.Script?, candidates: List<ProviderCandidate>): String? {
+        if (referenceScript != null) return referenceScript.name
+        val others = candidates.filter { it.providerName !in ChineseSources && it.providerName != YouTubeCaptionsLyricsProvider.name }
+        return majorityLanguage(languageKeys(others), minVotes = 1)
+    }
+
+    /**
+     * [candidate]'s language key, read the way [songLanguage] is: kanji and kana count as one
+     * family (a kanji-only title is still a Japanese song), and Latin lyrics whose language
+     * couldn't be told take the song's, when the song is in a Latin language.
+     */
+    private fun languageKey(candidate: ProviderCandidate, songLanguage: String): String = when {
+        candidate.script == LyricsUtils.Script.LATIN ->
+            candidate.language?.let { LatinPrefix + it }
+                ?: songLanguage.takeIf { it.startsWith(LatinPrefix) || it == LyricsUtils.Script.LATIN.name }
+                ?: LyricsUtils.Script.LATIN.name
+        candidate.script == LyricsUtils.Script.KANA && songLanguage == LyricsUtils.Script.HAN.name -> songLanguage
+        else -> candidate.script.name
     }
 
     private fun isNative(script: LyricsUtils.Script) =

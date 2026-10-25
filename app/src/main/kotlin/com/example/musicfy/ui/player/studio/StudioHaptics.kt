@@ -22,7 +22,7 @@ internal fun Context.playHoldRamp() {
     val vibrator = vibrator() ?: return
     if (!vibrator.hasVibrator()) return
     runCatching {
-        if (vibrator.hasAmplitudeControl()) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && vibrator.hasAmplitudeControl()) {
             val steps = 8
             val timings = LongArray(steps) { HoldRampMs / steps }
             // eased, so most of the rise is felt near the end
@@ -32,7 +32,8 @@ internal fun Context.playHoldRamp() {
             }
             vibrator.vibrate(VibrationEffect.createWaveform(timings, amplitudes, -1))
         } else {
-            vibrator.vibrate(VibrationEffect.createOneShot(28L, VibrationEffect.DEFAULT_AMPLITUDE))
+            @Suppress("DEPRECATION")
+            vibrator.vibrate(28L)
         }
     }
 }

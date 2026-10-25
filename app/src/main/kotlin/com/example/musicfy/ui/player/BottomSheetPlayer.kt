@@ -1409,7 +1409,16 @@ private fun PlayerSheet(
         ExpandMenuOverlay(
             visible = showExpandMenu,
             onDismiss = { showExpandMenu = false },
-            slots = menuLayout.slots,
+            // the Turntable's pills have no shuffle or repeat, so its menu adds them on top of the
+            // four set in the editor (unless one of those is already there)
+            slots = if (isTurntable) {
+                listOf(
+                    com.example.musicfy.ui.player.studio.PlayerMenuAction.SHUFFLE,
+                    com.example.musicfy.ui.player.studio.PlayerMenuAction.REPEAT,
+                ).filterNot { it in menuLayout.slots } + menuLayout.slots
+            } else {
+                menuLayout.slots
+            },
             isActive = ::menuActionActive,
             onAction = onMenuAction,
             repeatMode = transportState.repeatMode,
@@ -1605,7 +1614,7 @@ private fun Modifier.blurBleedRoom(room: androidx.compose.ui.unit.Dp): Modifier 
 private fun ExpandMenuOverlay(
     visible: Boolean,
     onDismiss: () -> Unit,
-    /** the four actions, top to bottom, as set in the editor */
+    /** the actions, top to bottom: the four set in the editor, and any the style adds */
     slots: List<com.example.musicfy.ui.player.studio.PlayerMenuAction>,
     isActive: (com.example.musicfy.ui.player.studio.PlayerMenuAction) -> Boolean,
     onAction: (com.example.musicfy.ui.player.studio.PlayerMenuAction) -> Unit,
@@ -1619,7 +1628,8 @@ private fun ExpandMenuOverlay(
     val menuItems = remember(slots) { slots.map { it.label to it.icon } }
 
     val density = LocalDensity.current
-    val itemProgress = remember { List(menuItems.size) { androidx.compose.animation.core.Animatable(0f) } }
+    // one per item, so a style that adds items gets its own set instead of reading past the end
+    val itemProgress = remember(menuItems.size) { List(menuItems.size) { androidx.compose.animation.core.Animatable(0f) } }
     val bgAlpha = remember { androidx.compose.animation.core.Animatable(0f) }
     var isRendered by remember { mutableStateOf(false) }
 

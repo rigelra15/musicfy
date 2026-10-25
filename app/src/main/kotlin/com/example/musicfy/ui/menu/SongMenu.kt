@@ -61,6 +61,10 @@ import androidx.navigation.NavController
 import coil3.compose.AsyncImage
 import com.music.innertube.YouTube
 import com.example.musicfy.LocalDatabase
+import com.example.musicfy.importer.ImportedVersions
+import com.example.musicfy.importer.TrackMatch
+import com.example.musicfy.ui.component.LocalMenuState
+import com.example.musicfy.ui.component.TopToaster
 import com.example.musicfy.LocalDownloadUtil
 import com.example.musicfy.LocalPlayerConnection
 import com.example.musicfy.LocalSyncUtils
@@ -133,6 +137,13 @@ fun SongMenu(
     )
 
     val isPinned by database.speedDialDao.isPinned(song.id).collectAsState(initial = false)
+
+    // the track an import brought this song in as: offers "Choose different version", and makes
+    // Refetch search for that track again rather than only refresh this song's details
+    val importMatch by produceState<TrackMatch?>(initialValue = null, song.id) {
+        value = ImportedVersions.trackFor(context, database, song.id)
+    }
+    val menuState = LocalMenuState.current
 
     val orderedArtists by produceState(initialValue = emptyList<ArtistEntity>(), song) {
         withContext(Dispatchers.IO) {
@@ -684,10 +695,32 @@ fun SongMenu(
         item {
             Material3MenuGroup(
                 items = buildList {
+                    importMatch?.let { match ->
+                        add(
+                            Material3MenuItemData(
+                                title = { Text(text = "Choose different version") },
+                                description = { Text(text = "Wrong recording? Pick the right one from a list") },
+                                icon = {
+                                    Icon(
+                                        painter = painterResource(R.drawable.tune),
+                                        contentDescription = null,
+                                    )
+                                },
+                                onClick = {
+                                    menuState.showChooseVersionSheet(match, onChosen = onDismiss)
+                                }
+                            )
+                        )
+                    }
                     add(
                         Material3MenuItemData(
                             title = { Text(text = stringResource(R.string.refetch)) },
-                            description = { Text(text = stringResource(R.string.refetch_desc)) },
+                            description = {
+                                Text(
+                                    text = if (importMatch != null) "Search again for the right version of this song"
+                                    else stringResource(R.string.refetch_desc)
+                                )
+                            },
                             icon = {
                                 Icon(
                                     painter = painterResource(R.drawable.sync),
@@ -697,12 +730,17 @@ fun SongMenu(
                             },
                             onClick = {
                                 refetchIconDegree -= 360
-                                scope.launch(Dispatchers.IO) {
-                                    YouTube.queue(listOf(song.id)).onSuccess {
-                                        val newSong = it.firstOrNull()
-                                        if (newSong != null) {
-                                            database.transaction {
-                                                update(song, newSong.toMediaMetadata())
+                                val match = importMatch
+                                if (match != null) {
+                                    refetchImported(context, database, match)
+                                } else {
+                                    scope.launch(Dispatchers.IO) {
+                                        YouTube.queue(listOf(song.id)).onSuccess {
+                                            val newSong = it.firstOrNull()
+                                            if (newSong != null) {
+                                                database.transaction {
+                                                    update(song, newSong.toMediaMetadata())
+                                                }
                                             }
                                         }
                                     }
@@ -729,6 +767,26 @@ fun SongMenu(
                         )
                     )
                 }
+            )
+        }
+    }
+}
+
+/**
+ * Refetch on an imported song: searches for the track it was imported as again, and says what came
+ * of it. It used to only refresh this song's own details, so a wrong version stayed wrong and the
+ * button looked like it did nothing.
+ */
+private fun refetchImported(context: android.content.Context, database: com.example.musicfy.db.MusicDatabase, match: TrackMatch) {
+    ImportedVersions.scope.launch {
+        val switched = ImportedVersions.refetch(context.applicationContext, database, match)
+        if (switched != null) {
+            TopToaster.show(text = "Found a closer match: ${switched.title}", thumbnail = switched.thumbnail, iconRes = R.drawable.sync)
+        } else {
+            TopToaster.show(
+                text = "This is already the closest match we can find. Try Choose different version.",
+                iconRes = R.drawable.sync,
+                durationMs = 4000L,
             )
         }
     }
