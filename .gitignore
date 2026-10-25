@@ -79,3 +79,8 @@ app/persistent-debug.keystore
 output-metadata.json
 vcs.xml
 lint/
+
+# Local tooling
+node_modules/
+.DS_Store
+design-plans/evidence/
