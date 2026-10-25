@@ -9,8 +9,11 @@ on:
       - 'fastlane/**'
       - 'assets/**'
       - '.github/**/*.md'
+      - 'webos-tv/**'
   pull_request:
     branches: [ '**' ]
+    paths-ignore:
+      - 'webos-tv/**'
 
 jobs:
   build_debug:

@@ -1,157 +1,220 @@
 <div align="center">
 
-<a href="webos-tv/README.md"><img src="webos-tv/assets/cover.png" alt="Musicfy for LG webOS TV" width="100%"></a>
+<img src="webos-tv/assets/cover.png" alt="Musicfy for LG webOS TV" width="100%">
 
-**Musicfy for LG webOS TV** is an unofficial TV port in this fork: [`webos-tv/`](webos-tv/README.md).
-The Android app below, and the original idea, are by [realidkroo](https://github.com/realidkroo) and [realkeichi](https://github.com/realkeichi) ([original repository](https://github.com/realidkroo/musicfy)); the TV port is by [Rigel Ramadhani Waloni](https://github.com/rigelra15). Both are GPL-3.0.
-Issues about the TV app belong in this fork, not in the original repository.
+# Musicfy for LG webOS TV
 
-</div>
+**A music player for your TV, made for the remote.**
+Synced lyrics, your own library and several audio sources on the big screen. Open source, and it does not collect your data.
 
----
-
-<img width="1799" height="927" alt="i" src="https://github.com/user-attachments/assets/1ecb7a39-2114-40ba-9306-51ebf385780a" />
-
----
-<div align="center">
-
-  Sleek modern cool music player for android, open source, packed with features and doesn’t collect ur data >_<
-  <br/>
-<p align="center">
-  <a href="https://github.com/realidkroo/musicfy/releases">
-    <img src="https://shieldcn.dev/github/downloads/realidkroo/musicfy.svg?mode=dark&radius=999&font=geist&split=true&height=28&fontSize=13&labelColor=1e1e2e&labelTextColor=ffffff&color=313244&valueColor=ffffff&logoColor=fab387" alt="Downloads">
-  </a>
-  <a href="https://github.com/realidkroo/musicfy/stargazers">
-    <img src="https://shieldcn.dev/github/stars/realidkroo/musicfy.svg?mode=dark&radius=999&font=geist&split=true&height=28&fontSize=13&labelColor=1e1e2e&labelTextColor=ffffff&color=313244&valueColor=ffffff&logoColor=f9e2af" alt="Stars">
-  </a>
-  <a href="https://github.com/realidkroo/musicfy/network/members">
-    <img src="https://shieldcn.dev/github/forks/realidkroo/musicfy.svg?mode=dark&radius=999&font=geist&split=true&height=28&fontSize=13&labelColor=1e1e2e&labelTextColor=ffffff&color=313244&valueColor=ffffff&logoColor=89b4fa" alt="Forks">
-      <a href="https://github.com/realidkroo/musicfy/releases">
-    <img src="https://shieldcn.dev/badge/Android-8.0%2B-313244.svg?mode=dark&radius=999&font=geist&split=true&height=28&fontSize=13&labelColor=1e1e2e&labelTextColor=ffffff&color=313244&valueColor=ffffff&logo=android&logoColor=94e2d5" alt="Android 8.0+">
-  </a>
-  </a>
-  <a href="https://github.com/realidkroo/musicfy/commits">
-    <img src="https://shieldcn.dev/github/commits/realidkroo/musicfy.svg?mode=dark&radius=999&font=geist&split=true&height=28&fontSize=13&labelColor=1e1e2e&labelTextColor=ffffff&color=313244&valueColor=ffffff&logoColor=a6e3a1" alt="Commits">
-  </a>
-  <a href="https://github.com/realidkroo/musicfy/releases/latest">
-    <img src="https://shieldcn.dev/github/release/realidkroo/musicfy.svg?mode=dark&radius=999&font=geist&split=true&height=28&fontSize=13&labelColor=1e1e2e&labelTextColor=ffffff&color=313244&valueColor=ffffff&logoColor=cba6f7" alt="Release">
-  </a>
-  <a href="https://github.com/realidkroo/musicfy/issues">
-    <img src="https://shieldcn.dev/github/issues/realidkroo/musicfy.svg?mode=dark&radius=999&font=geist&split=true&height=28&fontSize=13&labelColor=1e1e2e&labelTextColor=ffffff&color=313244&valueColor=ffffff&logoColor=f38ba8" alt="Issues">
-  </a>
-  <a href="https://github.com/realidkroo/musicfy/blob/main/LICENSE">
-    <img src="https://shieldcn.dev/github/license/realidkroo/musicfy.svg?mode=dark&radius=999&font=geist&split=true&height=28&fontSize=13&labelColor=1e1e2e&labelTextColor=ffffff&color=313244&valueColor=ffffff&logoColor=b4befe" alt="License">
-  </a>
-  <a href="https://github.com/realidkroo/musicfy/blob/main/Roadmap.md">
-    <img src="https://shieldcn.dev/badge/Roadmap-View-313244.svg?mode=dark&radius=999&font=geist&split=true&height=28&fontSize=13&labelColor=1e1e2e&labelTextColor=ffffff&color=313244&valueColor=ffffff&logoColor=b4befe" alt="Roadmap">
-  </a>
+<p>
+  <a href="https://github.com/rigelra15/musicfy/releases/latest"><img alt="Latest release" src="https://img.shields.io/github/v/release/rigelra15/musicfy?filter=webos-v*&style=for-the-badge&color=313244&labelColor=1e1e2e"></a>
+  <a href="https://github.com/rigelra15/musicfy/actions/workflows/webos-ipk.yml"><img alt="Build" src="https://img.shields.io/github/actions/workflow/status/rigelra15/musicfy/webos-ipk.yml?branch=webos-tv&style=for-the-badge&color=313244&labelColor=1e1e2e"></a>
+  <img alt="webOS TV" src="https://img.shields.io/badge/LG%20webOS-TV-313244?style=for-the-badge&labelColor=1e1e2e">
+  <a href="LICENSE"><img alt="License GPL-3.0" src="https://img.shields.io/badge/license-GPL--3.0-313244?style=for-the-badge&labelColor=1e1e2e"></a>
 </p>
+
 </div>
 
 ---
 
-> [!WARNING]
-> Support for android 8+ until 11 is available but expect any bugs. this app is intended only for android 13+
+> [!IMPORTANT]
+> This is an **unofficial** port. Musicfy is the idea and work of [**realidkroo**](https://github.com/realidkroo) and [**realkeichi**](https://github.com/realkeichi), see the [original repository](https://github.com/realidkroo/musicfy). This fork adds the LG webOS TV app. Please report problems with the TV app **here**, not in the original repository, which does not support forks.
 
-> [!WARNING]
-> This app still on beta!, expect some bugs! reporting it will be useful too.
+> [!NOTE]
+> This app is in beta. Parts of it are proven on a real TV and parts are not; see [Honest limits](#honest-limits).
 
+## Contents
 
-> [!WARNING]
-> Thanks for sharing the app, but PLEASE share this repo instead of sharing your own app download in a mediafire or smth, and this app is not for monetized, please dont upload it/gate keep it with a ads!!! i dont want my app to get monetized.
+- [Credits and origin](#credits-and-origin)
+- [What it does](#what-it-does)
+- [Install on your TV](#install-on-your-tv)
+- [Bring your music over](#bring-your-music-over)
+- [Troubleshooting](#troubleshooting)
+- [Honest limits](#honest-limits)
+- [Build it yourself](#build-it-yourself)
+- [Repository layout](#repository-layout)
+- [License](#license)
+- [Disclaimer](#disclaimer)
+- [Thanks](#thanks)
 
-> [!WARNING]
-> I dont support forks, please do not commit issue from forked apps here.
+## Credits and origin
 
----
-## How to install? 
-**Go to https://github.com/realidkroo/musicfy/releases/latest
-Pick the latest version, and the correct architecture of your phone, normally it will be arm64**
+Musicfy was made by **realidkroo** and **realkeichi**: the product idea, the design language, the screens and their order, the onboarding, the settings, the audio-source and lyrics-provider contracts and the phone-to-TV transfer idea all come from their Android app. This TV app is an independent port by [Rigel Ramadhani Waloni](https://github.com/rigelra15), written for the web platform (a Preact and TypeScript UI plus a Node 16 service that runs on the TV). It follows the original's behaviour closely but does not copy its Kotlin code, apart from the onboarding icons, which are read straight from the Android app's vector drawables.
 
----
-## Other notes
-you can straightly compile using build.sh type build.sh --help for more info.
-its a script to make the day easier.
-you can fork it but I dont support unofficial fork
+The original app itself is a fork of ViviMusic and builds on Metrolist, RiMusic and ArchiveTune, credited in [Thanks](#thanks). If you like this, please also star the original project.
 
-oh also thanks to [monochrome](https://github.com/monochrome-music/monochrome) we have FLAC streams!
+## What it does
 
----
-## Wants to help? bug report? report it on issues!
+- **Home, Search, Library and Settings** in the phone's style: shelves, mood and genre pages, history, statistics, playlists, likes and pins, all kept on the TV.
+- **Player** with the cover, controls and lyrics side by side, five player presets, a blurred cover backdrop, a queue panel, a sleep timer and playback speed.
+- **Synced lyrics** from many providers, by line, word or syllable, with grouped backing vocals, translation and readings. Timing is never made up: a source with only line times only gets line times.
+- **Audio sources:** YouTube Music (no account), Monochrome (lossless FLAC, no account) and Apple Music through a session sent from your phone.
+- **Moving in:** transfer your collection from the Android app over your home network (QR pairing), import a backup file or CSV, or read a playlist link (Spotify, Apple Music, Deezer, YouTube).
+- **Last.fm and Libre.fm** scrobbling, signed in on the phone side.
+- **Indonesian and English**, switchable in Settings and following the TV language on first run.
+- **Remote first:** every screen works with the D-pad, OK and Back. The Magic Remote pointer works too: hover chevrons on shelves, and the navbar slides away on the player when you stop using the remote.
 
-Or read contribute.md there
+Left out on purpose, because they do not make sense on a TV: downloads, offline and local media, the audio lab (equalizer and effects), Discord presence and exporting to a file.
 
----
+## Install on your TV
+
+You need an LG webOS TV, a computer on the same network, and about fifteen minutes the first time. The app was built and tested on an LG 43UA7550PSA (webOS 25); other models should work but are untested.
+
+The app is installed in **Developer Mode**. That is LG's own way to run apps that are not in the LG Content Store, and it is free.
+
+### 1. Turn on Developer Mode on the TV
+
+1. Create a free LG developer account at [webostv.developer.lge.com](https://webostv.developer.lge.com).
+2. On the TV, open the LG Content Store, search for **Developer Mode** and install it.
+3. Open **Developer Mode**, sign in with your LG developer account and switch **Dev Mode Status** on. The TV restarts.
+4. Open Developer Mode again. Switch **Key Server** on. Keep this screen open: it shows the TV's **IP address** and a **passphrase** you need in step 3.
+
+### 2. Prepare your computer
+
+1. Install [Node.js](https://nodejs.org) 22 or newer.
+2. Install LG's webOS command-line tools:
+
+   ```sh
+   npm install --global @webos-tools/cli
+   ```
+
+### 3. Pair the computer with the TV
+
+Replace `<TV_IP>` with the address shown in the Developer Mode app, and `mytv` with any name you like:
+
+```sh
+ares-setup-device --add mytv --info "{'host':'<TV_IP>','port':'9922','username':'prisoner'}"
+ares-novacom --device mytv --getkey
+```
+
+The second command asks for the **passphrase** from the Developer Mode app. Check that it worked:
+
+```sh
+ares-device-info --device mytv
+```
+
+### 4. Download and install Musicfy
+
+1. Download the newest `com.musicfy.webos_<version>_all.ipk` from the [Releases page](https://github.com/rigelra15/musicfy/releases/latest). Every release is built from the source in this repository by GitHub Actions; the same file is also attached to each [workflow run](https://github.com/rigelra15/musicfy/actions/workflows/webos-ipk.yml).
+2. Install it and start it:
+
+   ```sh
+   ares-install --device mytv com.musicfy.webos_<version>_all.ipk
+   ares-launch --device mytv com.musicfy.webos
+   ```
+
+Musicfy now shows up in the TV's app launcher and opens like any other app. The first run walks you through a short introduction.
+
+### Updating, removing and the Developer Mode session
+
+- **Update:** install the newer `.ipk` the same way. Your library and settings stay on the TV.
+- **Remove:** `ares-install --device mytv --remove com.musicfy.webos`.
+- **Session:** Developer Mode sessions expire. When Musicfy stops opening, open the Developer Mode app on the TV and extend (renew) the session. This is LG's rule for Developer Mode and cannot be avoided; it is not a Content Store release.
+
+## Bring your music over
+
+The TV keeps its own library, separate from your phone. To bring yours:
+
+- **From the Musicfy Android app:** build the Android app from this repository (`app/`, see [Build it yourself](#build-it-yourself)) and open **Import & sync**, then **Transfer to TV**. On the TV, choose **Import from the phone** during the introduction or in **Settings**, then **Import**, then **Connect phone**, and scan the QR code. The phone and the TV must be on the same network. Nothing leaves your home network, and the TV shows what it would add and asks before it imports anything.
+- **From a backup or CSV file** or **a playlist link:** use the same Import screen on the TV.
+- **Apple Music:** sign in on the phone and send the session to the TV, from **Settings**, **Modules**, **Apple Music**. See [Honest limits](#honest-limits) for why.
+
+## Troubleshooting
+
+| Problem | What to check |
+| --- | --- |
+| `ares-novacom` or `ares-install` cannot connect | The TV and the computer must be on the same network. Check the IP in the Developer Mode app, that **Dev Mode Status** and **Key Server** are on, and that port `9922` is not blocked. |
+| The key or passphrase is rejected | The passphrase changes when Developer Mode is switched off and on again. Read it again from the app and run `ares-novacom --getkey` again. |
+| The app does not open any more | The Developer Mode session has probably expired. Extend it in the Developer Mode app on the TV. |
+| The `ares-*` commands are not found | Reopen the terminal after installing `@webos-tools/cli`, and make sure the global npm folder is in your `PATH`. |
+| A song does not play | Sources can be limited or unavailable at any time. Try another song, or change the source order in **Settings**, **Modules**. The in-app **Diagnostics** screen shows what the TV can and cannot do. |
+| No lyrics for a song | Lyrics come from third-party services, and some songs have none. Open the player's options to pick another lyrics source. |
+| The Android transfer cannot find the TV | Both devices must be on the same Wi-Fi. The QR code is valid for a few minutes: start again to get a new one. |
+
+## Honest limits
+
+- **Apple Music cannot be signed in on the TV itself.** Apple's sign-in only runs on `music.apple.com`, which cannot be embedded in another app, and whose token is only valid for the `apple.com` origin. So the session is created on the phone and sent to the TV. Apple Music playback through DRM on the TV is **not proven** yet.
+- Not everything has been verified on a real TV. [`webos-tv/VALIDATION.md`](webos-tv/VALIDATION.md) lists what is proven and what is not, and the in-app Diagnostics screen shows the same.
+- External providers (lyrics, catalog, audio sources) can be limited or unavailable at any moment.
+
+## Build it yourself
+
+### The TV app
+
+Needs Node 22.12 or newer and the webOS CLI (`@webos-tools/cli`):
+
+```sh
+cd webos-tv
+npm ci
+npm run typecheck
+npm test
+npm run package:ipk
+```
+
+The package ends up in `webos-tv/artifacts/com.musicfy.webos_<version>_all.ipk`. To try the interface in a browser while you work:
+
+```sh
+npm run dev -- --port 4177
+```
+
+The dev server uses the same service handler as the TV, so it is close to the real thing; it is only a preview and the installed app does not need it. More detail is in [`webos-tv/README.md`](webos-tv/README.md), [`webos-tv/server/API.md`](webos-tv/server/API.md) and [`webos-tv/TRANSFER.md`](webos-tv/TRANSFER.md).
+
+### Releases built by GitHub Actions
+
+The workflow [`webos-ipk.yml`](.github/workflows/webos-ipk.yml) type-checks, tests and packages the IPK on every push to `webos-tv` that touches `webos-tv/`, and on pull requests. The IPK is attached to the run as an artifact. To publish a release, change the version in `webos-tv/public/appinfo.json`, then push a tag that matches it:
+
+```sh
+git tag webos-v0.4.0
+git push origin webos-v0.4.0
+```
+
+The workflow refuses a tag that does not match the app version, builds the IPK and attaches it to a new GitHub release.
+
+### The Android app (for transfers)
+
+The Android app in `app/` is the original Musicfy, plus a **Transfer to TV** screen. Build it with `./build.sh` (`./build.sh --help` for options) or open the project in Android Studio. The Android workflows (`build.yml`, `build_pr.yml`) do not run for changes that only touch `webos-tv/`.
+
+## Repository layout
+
+| Folder | What it is |
+| --- | --- |
+| `webos-tv/` | The TV app: UI (`src/`), the on-TV service (`service/`), tests, packaging scripts and docs |
+| `app/`, `modules/`, `providers/` | The original Android app (by realidkroo and realkeichi), plus the `tvtransfer` module and Transfer to TV screen |
+| `cast-receiver/` | The Google Cast receiver of the Android app |
+| `docs/`, `design-plans/` | Plans, specs, the parity matrix and audits of the TV port |
+
+## License
+
+Licensed under the **GNU General Public License v3.0** ([`LICENSE`](LICENSE)), the same license as the original Musicfy, because this work is derived from it. Anyone who receives the app, including the `.ipk`, is entitled to its source code under the same terms. The names and logo "Musicfy" belong to the original project: this port uses them only to show where it comes from, so if you publish your own build, say clearly that it is unofficial.
+
+Third-party parts keep their own licenses:
+
+| Part | License |
+| --- | --- |
+| webOSTV.js 1.2.13 (LG) | Apache 2.0, in `webos-tv/public/vendor/webOSTVjs-1.2.13/` |
+| Lucide icons | ISC, `webos-tv/public/vendor/lucide-LICENSE.txt` |
+| Inter font | SIL Open Font License 1.1, `webos-tv/public/fonts/Inter-LICENSE.txt` |
+| shaka-player, preact, iconify-icon, qrcode-generator | their own licenses, see `webos-tv/package.json` |
+
 ## Disclaimer
 
 Musicfy is an independent, unofficial project made for personal and educational use. It is provided as is, without warranty of any kind.
 
-- Musicfy is a fully open source project that is created purely for educationa and personal use. thats why, we dont sell this software, or monetize it. we do not have any intent to add commercial values in the future. thanks!
-- And were deeply respect the hardwork of artist musicians ajd contwnt creators. without them there is also no musicfy: i strongly suggest that you, as user, subscribe to Apple music or youtube premium, to support the creators you listen. I do not intend to hurt creator with this app.
-- It is **not affiliated with, endorsed by, or sponsored by** YouTube, YouTube Music, Google, Spotify, Apple, Last.fm, Shazam, Discord or any other service it can connect to. All names, logos and brands belong to their respective owners.
-- Musicfy does not host, store or distribute any music. Everything is fetched from third-party services when you ask for it, and those services can change or stop working at any time.
-- You are responsible for how you use the app, including the terms of service of the accounts and services you connect and the copyright laws where you live.
-- Importing from other services (Spotify, etc.) uses your own account. Don't share your login data or tokens with anyone.
+- It is not sold and not monetized, and has no commercial intent. Please share this **repository** rather than a copy of the app on a file host.
+- Respect the work of artists, musicians and creators. Please subscribe to Apple Music, YouTube Premium or another service you like to support them.
+- It is **not affiliated with, endorsed by, or sponsored by** YouTube, YouTube Music, Google, Spotify, Apple, LG, Last.fm, Deezer or any other service it can connect to. All names, logos and brands belong to their owners.
+- It does not host, store or distribute any music. Everything is fetched from third-party services when you ask for it, and those services can change or stop working at any time.
+- You are responsible for how you use the app, including the terms of the services you connect and the copyright laws where you live.
+- Importing or signing in uses your own accounts. Do not share your login data or tokens with anyone.
 
----
-## Preview
+## Thanks
 
-<details>
-  <summary><b>Preview (click to expand)</b></summary>
-  <br>
-  <table>
-    <tr>
-      <td align="center"><img height="390" alt="Preview 1" src="https://github.com/user-attachments/assets/83f753b4-5dec-45f6-bf66-c00023b3b961" /></td>
-      <td align="center"><img height="390" alt="Preview 2" src="https://github.com/user-attachments/assets/bc2e001e-4b5e-421e-af96-b86c8d2a8bbb" /></td>
-      <td align="center"><img height="390" alt="Preview 3" src="https://github.com/user-attachments/assets/06499690-1168-477f-8924-d767c8216b5f" /></td>
-    </tr>
-    <tr>
-      <td align="center"><img height="390" alt="Preview 4" src="https://github.com/user-attachments/assets/ca84b924-8705-403c-83a5-e3a74e7d74c7" /></td>
-      <td align="center"><img height="390" alt="Preview 5" src="https://github.com/user-attachments/assets/a2ed32b6-2cbe-4b6e-8e1e-3bb82211f26d" /></td>
-      <td align="center"><img height="390" alt="Preview 6" src="https://github.com/user-attachments/assets/bbf05596-eb66-40ab-a1e1-32c51a8cd940" /></td>
-    </tr>
-  </table>
-</details>
+To **realidkroo** and **realkeichi** for Musicfy, and to the projects it stands on:
 
----
-
-
----
-
-## These incredible project helped musicfy a lot!
-
-- **ViviMusic** by [vivizzz007Z](https://github.com/vivizzz007Z) )[Their repo](https://github.com/vivizzz007/vivi-music)) -- For the base app. This app is a fork from this project.
-- **Metrolist** by [Mostafa Alagamy](https://github.com/mostafaalagamy) ([Repository](https://github.com/mostafaalagamy/Metrolist)) -- For the base framework.
-- **SimpMusic** by [maxrave-dev](https://github.com/maxrave-dev) ([Repository](https://github.com/maxrave-dev/SimpMusic)) -- For the lyrics API provider.
-- **Archivetune** by [Rukamori](https://github.com/rukamori) ([Repository](https://github.com/rukamori/ArchiveTune)) -- For design and architectural inspiration.
-- **RiMusic / InnerTube** by [fast4x](https://github.com/fast4x) ([Repository](https://github.com/fast4x/RiMusic)) -- For YouTube Music InnerTube API service wrapper.
-- **LRCLib** by [tranxuanthang](https://github.com/tranxuanthang) ([Repository](https://github.com/tranxuanthang/lrclib) / [Website](https://lrclib.net/)) -- For synchronized LRC lyrics provider integration.
-- **Monochrome Music** by [monochrome-music](https://github.com/monochrome-music) ([Repository](https://github.com/monochrome-music/monochrome) / ([Website](https://monochrome.st)) -- Flac streams, visit their web, very cool one.
-- **Auto Eq** ([Web](https://autoeq.app)) -- The equalizer database
-
----
-
-## Open source APIs musicfy talks to
-
-These are the open source apis and server we get gets its lyrics, streams and data from. They r free for everyone because of these good people, so go give them a star!
-
-- **LyricsPlus** by [Ibra Al Tabian](https://github.com/ibratabian17) ([repos](https://github.com/ibratabian17/LyricsPlus)) s
-- **Better Lyrics API** by [Boidushya](https://github.com/boidushya) ([repos](https://github.com/better-lyrics/api)) 
-- **LRCLIB** by [tranxuanthang](https://github.com/tranxuanthang) ([repos](https://github.com/tranxuanthang/lrclib) / [Website](https://lrclib.net/)) 
-- **SimpMusic Lyrics** by [maxrave-dev](https://github.com/maxrave-dev) ([repos](https://github.com/maxrave-dev/SimpMusic)) 
-
-
----
-## Star History
-
-<a href="https://www.star-history.com/?repos=realidkroo%2Fmusicfy&type=date&legend=top-left">
- <picture>
-   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=realidkroo/musicfy&type=date&theme=dark&legend=top-left" />
-   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=realidkroo/musicfy&type=date&legend=top-left" />
-   <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=realidkroo/musicfy&type=date&legend=top-left" />
- </picture>
-</a>
-
-<div align="center">
-  <sub>star the repo plssss!</sub>
-</div>
+- **ViviMusic** by [vivizzz007Z](https://github.com/vivizzz007Z): the base of the original app
+- **Metrolist** by [Mostafa Alagamy](https://github.com/mostafaalagamy/Metrolist) and **ArchiveTune** by [Rukamori](https://github.com/rukamori/ArchiveTune): framework, design and architecture inspiration
+- **RiMusic / InnerTube** by [fast4x](https://github.com/fast4x/RiMusic): YouTube Music service wrapper
+- **Monochrome** by [monochrome-music](https://github.com/monochrome-music/monochrome): the FLAC streams
+- **LRCLIB** by [tranxuanthang](https://github.com/tranxuanthang/lrclib), **SimpMusic** by [maxrave-dev](https://github.com/maxrave-dev/SimpMusic), **LyricsPlus** by [Ibra Al Tabian](https://github.com/ibratabian17/LyricsPlus) and **Better Lyrics API** by [Boidushya](https://github.com/better-lyrics/api): lyrics
+- **LG** for webOSTV.js and the webOS CLI, and the **Lucide** and **Inter** projects for icons and the typeface

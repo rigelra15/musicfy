@@ -1,0 +1,97 @@
+name: webOS TV IPK
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ webos-tv ]
+    paths:
+      - 'webos-tv/**'
+      - '.github/workflows/webos-ipk.yml'
+    tags:
+      - 'webos-v*'
+  pull_request:
+    paths:
+      - 'webos-tv/**'
+
+permissions:
+  contents: read
+
+jobs:
+  ipk:
+    name: Test and package the IPK
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: webos-tv
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: webos-tv/package-lock.json
+
+      - name: Install the webOS CLI (ares-package)
+        run: npm install --global @webos-tools/cli
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type check
+        run: npm run typecheck
+
+      - name: Test
+        run: npm test
+
+      - name: Package the IPK
+        run: npm run package:ipk
+
+      - name: Name the IPK
+        id: ipk
+        run: |
+          version=$(node -p "require('./public/appinfo.json').version")
+          file="artifacts/com.musicfy.webos_${version}_all.ipk"
+          test -f "$file" || { echo "Expected $file was not built" >&2; exit 1; }
+          echo "file=webos-tv/$file" >> "$GITHUB_OUTPUT"
+          echo "name=$(basename "$file")" >> "$GITHUB_OUTPUT"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - name: A release tag must match the app version
+        if: startsWith(github.ref, 'refs/tags/webos-v')
+        run: |
+          if [ "${GITHUB_REF_NAME}" != "webos-v${{ steps.ipk.outputs.version }}" ]; then
+            echo "Tag ${GITHUB_REF_NAME} does not match appinfo.json version ${{ steps.ipk.outputs.version }}" >&2
+            exit 1
+          fi
+
+      - name: Upload the IPK
+        uses: actions/upload-artifact@v5
+        with:
+          name: ${{ steps.ipk.outputs.name }}
+          path: ${{ steps.ipk.outputs.file }}
+          if-no-files-found: error
+
+    outputs:
+      file: ${{ steps.ipk.outputs.file }}
+      name: ${{ steps.ipk.outputs.name }}
+
+  release:
+    name: Publish the release
+    needs: ipk
+    if: startsWith(github.ref, 'refs/tags/webos-v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v5
+        with:
+          name: ${{ needs.ipk.outputs.name }}
+          path: release
+
+      - name: Create the GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: Musicfy for webOS TV ${{ github.ref_name }}
+          generate_release_notes: true
+          files: release/*.ipk
