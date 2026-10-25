@@ -1,15 +1,15 @@
-## 🚀 What does this PR do?
-- [ ] 🐛 Fixes a bug (Issue #___)
-- [ ] ✨ Adds a new feature
-- [ ] 🎨 UI/Design update
-- [ ] ⚡ Performance improvement
-- [ ] 🧹 Code refactoring
+## What does this PR do?
+- [ ] Fixes a bug (issue #___)
+- [ ] Adds a feature
+- [ ] UI / design update
+- [ ] Performance improvement
+- [ ] Refactoring
 
-## 📸 Screenshots / Recordings
-## 🛠️ Checklist
-- [ ] My code follows the project's style guidelines.
-- [ ] I have tested my changes on an Android device/emulator.
-- [ ] I have verified that no new warnings/errors are introduced.
-- [ ] I have updated the documentation (if necessary).
+## Screenshots / recordings
 
-## 📝 Additional Notes
+## Checklist
+- [ ] `npm run typecheck` and `npm test` pass in `webos-tv/`
+- [ ] I checked the change in the browser preview (`npm run dev`) or on an LG TV
+- [ ] I updated the documentation if needed
+
+## Notes

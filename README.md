@@ -8,7 +8,7 @@
 Synced lyrics, your own library and several audio sources on the big screen. Open source, and it does not collect your data.
 
 <p>
-  <a href="https://github.com/rigelra15/musicfy/releases/latest"><img alt="Latest release" src="https://img.shields.io/github/v/release/rigelra15/musicfy?filter=webos-v*&style=for-the-badge&color=313244&labelColor=1e1e2e"></a>
+  <a href="https://github.com/rigelra15/musicfy/releases/latest"><img alt="Latest release" src="https://img.shields.io/github/v/release/rigelra15/musicfy?filter=webos-v*&cacheSeconds=300&style=for-the-badge&color=313244&labelColor=1e1e2e"></a>
   <a href="https://github.com/rigelra15/musicfy/actions/workflows/webos-ipk.yml"><img alt="Build" src="https://img.shields.io/github/actions/workflow/status/rigelra15/musicfy/webos-ipk.yml?branch=webos-tv&style=for-the-badge&color=313244&labelColor=1e1e2e"></a>
   <img alt="webOS TV" src="https://img.shields.io/badge/LG%20webOS-TV-313244?style=for-the-badge&labelColor=1e1e2e">
   <a href="LICENSE"><img alt="License GPL-3.0" src="https://img.shields.io/badge/license-GPL--3.0-313244?style=for-the-badge&labelColor=1e1e2e"></a>
@@ -40,7 +40,7 @@ Synced lyrics, your own library and several audio sources on the big screen. Ope
 
 ## Credits and origin
 
-Musicfy was made by **realidkroo** and **realkeichi**: the product idea, the design language, the screens and their order, the onboarding, the settings, the audio-source and lyrics-provider contracts and the phone-to-TV transfer idea all come from their Android app. This TV app is an independent port by [Rigel Ramadhani Waloni](https://github.com/rigelra15), written for the web platform (a Preact and TypeScript UI plus a Node 16 service that runs on the TV). It follows the original's behaviour closely but does not copy its Kotlin code, apart from the onboarding icons, which are read straight from the Android app's vector drawables.
+Musicfy was made by **realidkroo** and **realkeichi**: the product idea, the design language, the screens and their order, the onboarding, the settings, the audio-source and lyrics-provider contracts and the phone-to-TV transfer idea all come from their Android app. This TV app is an independent port by [Rigel Ramadhani Waloni](https://github.com/rigelra15), written for the web platform (a Preact and TypeScript UI plus a Node 16 service that runs on the TV). It follows the original's behaviour closely but does not copy its Kotlin code, apart from the onboarding icons, which are the Android app's vector drawables, kept in `webos-tv/assets/onboarding-icons/`.
 
 The original app itself is a fork of ViviMusic and builds on Metrolist, RiMusic and ArchiveTune, credited in [Thanks](#thanks). If you like this, please also star the original project.
 
@@ -50,7 +50,7 @@ The original app itself is a fork of ViviMusic and builds on Metrolist, RiMusic 
 - **Player** with the cover, controls and lyrics side by side, five player presets, a blurred cover backdrop, a queue panel, a sleep timer and playback speed.
 - **Synced lyrics** from many providers, by line, word or syllable, with grouped backing vocals, translation and readings. Timing is never made up: a source with only line times only gets line times.
 - **Audio sources:** YouTube Music (no account), Monochrome (lossless FLAC, no account) and Apple Music through a session sent from your phone.
-- **Moving in:** transfer your collection from the Android app over your home network (QR pairing), import a backup file or CSV, or read a playlist link (Spotify, Apple Music, Deezer, YouTube).
+- **Moving in:** import a backup file or CSV, read a playlist link (Spotify, Apple Music, Deezer, YouTube), or send your collection from the phone over your home network (QR pairing; see [Bring your music over](#bring-your-music-over)).
 - **Last.fm and Libre.fm** scrobbling, signed in on the phone side.
 - **Indonesian and English**, switchable in Settings and following the TV language on first run.
 - **Remote first:** every screen works with the D-pad, OK and Back. The Magic Remote pointer works too: hover chevrons on shelves, and the navbar slides away on the player when you stop using the remote.
@@ -116,9 +116,9 @@ Musicfy now shows up in the TV's app launcher and opens like any other app. The 
 
 The TV keeps its own library, separate from your phone. To bring yours:
 
-- **From the Musicfy Android app:** build the Android app from this repository (`app/`, see [Build it yourself](#build-it-yourself)) and open **Import & sync**, then **Transfer to TV**. On the TV, choose **Import from the phone** during the introduction or in **Settings**, then **Import**, then **Connect phone**, and scan the QR code. The phone and the TV must be on the same network. Nothing leaves your home network, and the TV shows what it would add and asks before it imports anything.
+- **From the phone, over the home network:** the phone side of the QR transfer (a **Transfer to TV** screen in the Android app) is not part of this branch. Its last version is kept in this repository at the tag [`android-with-transfer`](https://github.com/rigelra15/musicfy/tree/android-with-transfer): check it out and build it with Android Studio. On the TV, open **Settings**, then **Import**, then **Connect phone**, and scan the QR code; both devices must be on the same network. Nothing leaves your home network, and the TV shows what it would add and asks before it imports anything.
 - **From a backup or CSV file** or **a playlist link:** use the same Import screen on the TV.
-- **Apple Music:** sign in on the phone and send the session to the TV, from **Settings**, **Modules**, **Apple Music**. See [Honest limits](#honest-limits) for why.
+- **Apple Music:** the session is sent from the phone by the same sender (**Settings**, **Modules**, **Apple Music** on the TV). See [Honest limits](#honest-limits) for why.
 
 ## Troubleshooting
 
@@ -130,7 +130,7 @@ The TV keeps its own library, separate from your phone. To bring yours:
 | The `ares-*` commands are not found | Reopen the terminal after installing `@webos-tools/cli`, and make sure the global npm folder is in your `PATH`. |
 | A song does not play | Sources can be limited or unavailable at any time. Try another song, or change the source order in **Settings**, **Modules**. The in-app **Diagnostics** screen shows what the TV can and cannot do. |
 | No lyrics for a song | Lyrics come from third-party services, and some songs have none. Open the player's options to pick another lyrics source. |
-| The Android transfer cannot find the TV | Both devices must be on the same Wi-Fi. The QR code is valid for a few minutes: start again to get a new one. |
+| The phone cannot find the TV during a transfer | Both devices must be on the same Wi-Fi. The QR code is valid for a few minutes: start again to get a new one. |
 
 ## Honest limits
 
@@ -171,18 +171,13 @@ git push origin webos-v0.4.0
 
 The workflow refuses a tag that does not match the app version, builds the IPK and attaches it to a new GitHub release.
 
-### The Android app (for transfers)
-
-The Android app in `app/` is the original Musicfy, plus a **Transfer to TV** screen. Build it with `./build.sh` (`./build.sh --help` for options) or open the project in Android Studio. The Android workflows (`build.yml`, `build_pr.yml`) do not run for changes that only touch `webos-tv/`.
-
 ## Repository layout
 
 | Folder | What it is |
 | --- | --- |
 | `webos-tv/` | The TV app: UI (`src/`), the on-TV service (`service/`), tests, packaging scripts and docs |
-| `app/`, `modules/`, `providers/` | The original Android app (by realidkroo and realkeichi), plus the `tvtransfer` module and Transfer to TV screen |
-| `cast-receiver/` | The Google Cast receiver of the Android app |
-| `docs/`, `design-plans/` | Plans, specs, the parity matrix and audits of the TV port |
+| `docs/`, `design-plans/` | Plans, specs, the parity matrix and audits of the TV port (they mention the original Android app as the reference) |
+| `.github/` | The `webOS TV IPK` workflow, the stale-issue handler and contribution templates |
 
 ## License
 

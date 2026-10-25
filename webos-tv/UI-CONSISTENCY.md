@@ -1,6 +1,6 @@
 # Mobile/TV consistency
 
-Reference: Android source in app/src/main/kotlin/com/example/musicfy.
+Reference: the original Android app, [realidkroo/musicfy](https://github.com/realidkroo/musicfy) (`app/src/main/kotlin/com/example/musicfy`); not part of this branch.
 
 TV keeps the mobile black/white/gray palette and Inter fonts. The top navigation
 is adapted for D-pad and viewing distance; it includes the Musicfy icon before

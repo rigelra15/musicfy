@@ -1,7 +1,7 @@
 # Phone → TV transfer and the portable backup
 
 What moves a collection from the Musicfy phone app to the TV without a computer, and the file format it carries.
-Android half: `modules/tvtransfer` (plain JVM, tested with known answers from this side). TV half: `service/transfer.cjs`,
+Android half: the `tvtransfer` module and Transfer to TV screen, not part of this branch; the last version is at the git tag `android-with-transfer` (`modules/tvtransfer`, plain JVM, tested with known answers from this side). TV half: `service/transfer.cjs`,
 `src/backup/*`. Status of what is and is not verified is at the end.
 
 ## Portable backup (`*.musicfy.json`, version 1)
@@ -9,7 +9,7 @@ Android half: `modules/tvtransfer` (plain JVM, tested with known answers from th
 JSON, one object: `format: "musicfy-portable"`, `version: 1`, `exportId`, `exportedAt`, `exporter {app, version}`, then
 `tracks`, `library`, `likes`, `pins`, `savedEntities`, `playlists` (with ordered `entries`), `history`, `lyricsEdits`,
 `lyricsChoice`, `prefs`. Reference: `src/backup/portable.ts` (reader and importer) and
-`modules/tvtransfer/src/test/resources/portable-v1.json` (a file the Android side produces; both test suites use it).
+`server/fixtures/portable-v1.json` (a file the Android side produces; the TV tests read it from here, and the Kotlin tests at the tag read their own copy).
 
 * A track is `{id, title, artist, durationMs, provider?, album?, albumId?, artworkUrl? (https only), artists?, isrc?, explicit?, isVideo?}`;
   `provider` defaults to `youtube`. Everything else refers to tracks by `trackKey = provider:track:id`.
@@ -59,7 +59,7 @@ by either side, expires, the app is hidden or the service stops. It only knows t
 
 Loopback API on the TV service: `POST /api/transfer/start`, `GET /api/transfer/status`, `GET /api/transfer/payload` (once), `POST /api/transfer/cancel`.
 
-## The Android screen
+## The Android screen (at the tag `android-with-transfer`)
 
 Settings → Import & sync → **Transfer to TV** (`TvTransferScreen`, `TvTransferViewModel`, `TvTransferRepository`).
 

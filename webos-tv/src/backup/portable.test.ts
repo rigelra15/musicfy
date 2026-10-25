@@ -184,8 +184,8 @@ describe('validation', () => {
   });
 });
 
-describe('the Android companion\'s backup (golden file shared with the Kotlin tests)', () => {
-  const golden = readFileSync(fileURLToPath(new URL('../../../modules/tvtransfer/src/test/resources/portable-v1.json', import.meta.url)), 'utf8');
+describe('the Android companion\'s backup (golden file produced by the Android side, kept in server/fixtures)', () => {
+  const golden = readFileSync(fileURLToPath(new URL('../../server/fixtures/portable-v1.json', import.meta.url)), 'utf8');
 
   it('is read without losing a record, with the youtube provider as the default', () => {
     const parsed = parsePortable(golden);

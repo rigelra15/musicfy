@@ -21,11 +21,11 @@ for (const name of NAMES) {
 }
 if (missing.length) { console.error('missing icons:', missing.join(', ')); process.exit(1); }
 
-// Onboarding's own glyphs are the phone app's Android vector drawables, read as they are (as `onb-<name>`).
+// Onboarding's own glyphs are the original app's Android vector drawables (kept in assets/onboarding-icons), read as they are (as `onb-<name>`).
 const DRAWABLES = ['download', 'playlist_add', 'backup', 'person', 'home', 'library_music', 'check', 'add', 'edit', 'warning', 'tune', 'favorite'];
 const attr = (tag, name) => new RegExp('android:' + name + '="([^"]*)"').exec(tag)?.[1];
 for (const name of DRAWABLES) {
-  const xml = readFileSync('../app/src/main/res/drawable/' + name + '.xml', 'utf8');
+  const xml = readFileSync('assets/onboarding-icons/' + name + '.xml', 'utf8');
   const root = /<vector[^>]*>/.exec(xml)[0];
   const width = Number(attr(root, 'viewportWidth')), height = Number(attr(root, 'viewportHeight'));
   const body = [...xml.matchAll(/<path[^>]*>/g)].map(([tag]) => {

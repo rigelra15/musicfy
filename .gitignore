@@ -1,86 +1,21 @@
-# Built application & library files
-*.apk
-*.aar
-*.ap_
-*.aab
-*.dex
-*.dm
-*.class
-bin/
-gen/
-out/
-app/release
-app/universal*/
-app/arm64*/
-app/armeabi*/
-app/x86*/
+# Dependencies and build output
+node_modules/
+dist/
+coverage/
+artifacts/
+*.ipk
 
-# Gradle files & caches
-.gradle/
-.gradle-home/
-.gradle-codex/
-build/
-local.properties
+# Local environment
+.env
+.env.*
 
-# IDE & Editor files
+# Editors and OS
 .idea/
-*.iml
-.navigation/
-captures/
 .vscode/
 .DS_Store
 
-# Tool & AI Caches
+# Local tooling and captures
 .claude/
 CLAUDE.md
-.kotlin/
-assetscon/
-apk-generated/
-.build_number
-
-# Notes & plans
-plan.md
-implementation_plan.md
-transcript_*.txt
-
-# Logs, crash dumps & API response dumps
-*.log
-logcat*.txt
-*_log.txt
-*_logs.txt
-crash*.txt
-app/*.json
-
-# Keystores
-app/persistent-debug.keystore
-
-# Native & C++ build outputs
-.externalNativeBuild
-.cxx/
-*.so
-*.bin
-
-# Scratch files in the repo root (not part of the build)
-/test_*
-/Test*.kt
-/fix_*
-/get_*.py
-/*.svg
-/app_src_*
-/NEW-UI/
-/old-player/
-/jadx/
-/jadx.zip
-
-# Misc
-*.py
-!scripts/*.py
-.env
-output-metadata.json
-vcs.xml
-lint/
-
-# Local tooling
-node_modules/
-.DS_Store
+.superpowers/
 design-plans/evidence/
