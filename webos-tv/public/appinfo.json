@@ -1,0 +1,12 @@
+{
+  "id": "com.musicfy.webos",
+  "version": "0.4.0",
+  "vendor": "Musicfy",
+  "type": "web",
+  "main": "index.html",
+  "title": "Musicfy",
+  "icon": "icon.png",
+  "largeIcon": "largeIcon.png",
+  "requiredACG": [],
+  "resolution": "1280x720"
+}

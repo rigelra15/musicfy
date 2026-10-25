@@ -1,0 +1,107 @@
+.artwork {
+  position: relative;
+  flex: none;
+  isolation: isolate;
+  overflow: hidden;
+  background: transparent;
+}
+.artwork-image { display: block; width: 100%; height: 100%; overflow: hidden; background: #171717; }
+.artwork-image img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.artwork-image-fallback { display: grid; place-items: center; }
+.artwork-image-fallback img { width: 55%; height: 55%; object-fit: contain; }
+.artwork-edge-to-edge { border-radius: 0; }
+.artwork-squared > .artwork-image { border-radius: inherit; }
+.artwork-disc { --disc-size: 100%; --disc-x: 50%; --disc-y: 50%; --disc-art: 88%; --disc-text-inset: 1.5%; border-radius: 0; }
+.artwork-disc-small-label { --disc-art: 44%; --disc-text-inset: 10.5%; }
+.artwork-disc-big-full { --disc-size: 155%; --disc-x: 24%; --disc-y: 20%; --disc-art: 95%; --disc-text-inset: .6%; }
+.artwork-disc-big-label { --disc-size: 160%; --disc-x: 22%; --disc-y: 18%; --disc-art: 42%; --disc-text-inset: 11%; }
+.artwork-disc-album { --disc-size: 82%; --disc-x: 43%; --disc-art: 40%; --disc-text-inset: 11.5%; }
+.artwork-turntable { --disc-size: 140.6%; --disc-x: 16.2%; --disc-y: 70.3%; --disc-art: 52.6%; --disc-text-inset: 9%; }
+.artwork-record {
+  position: absolute;
+  width: var(--disc-size);
+  height: var(--disc-size);
+  left: var(--disc-x);
+  top: var(--disc-y);
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+}
+.artwork-vinyl { position: absolute; top: 0; right: 0; bottom: 0; left: 0; border-radius: 50%; background: #0b0b0d; border: 1px solid #333; }
+.artwork-realistic .artwork-record { box-shadow: 0 7px 24px #0009; }
+.artwork-realistic .artwork-vinyl {
+  background:
+    conic-gradient(from 25deg, #0000 0deg, #ffffff0d 35deg, #0000 70deg, #ffffff06 170deg, #0000 205deg, #ffffff13 230deg, #0000 280deg),
+    repeating-radial-gradient(circle, #111 0px, #111 2px, #232323 2.5px, #111 3px, #161616 4px);
+}
+.artwork-rotor {
+  position: absolute;
+  top: 0; right: 0; bottom: 0; left: 0;
+  border-radius: 50%;
+  animation: artwork-spin 13.846153846s linear infinite;
+  animation-play-state: paused;
+}
+.artwork[data-spinning="true"] .artwork-rotor { animation-play-state: running; will-change: transform; }
+.artwork-label {
+  position: absolute;
+  width: var(--disc-art);
+  height: var(--disc-art);
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  overflow: hidden;
+  border: 1px solid #ffffff18;
+}
+.artwork-lettering { position: absolute; top: 0; right: 0; bottom: 0; left: 0; border-radius: 50%; }
+.artwork-lettering > span {
+  position: absolute;
+  top: 0; right: 0; bottom: 0; left: 0;
+  padding-top: var(--disc-text-inset);
+  text-align: center;
+  font-size: clamp(8px, calc(.58 * var(--player-vw, 1vw)), 12px);
+  font-weight: 600;
+  line-height: 1;
+  color: #ffffff9c;
+  white-space: pre;
+}
+.artwork-spindle {
+  position: absolute;
+  width: 3.8%; height: 3.8%;
+  left: 50%; top: 50%;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: #101010;
+  border: 1px solid #777;
+}
+.artwork-realistic .artwork-spindle { background: radial-gradient(circle at 35% 30%, #ededed, #8b8b8b 45%, #2a2a2a 85%); box-shadow: 1px 2px 3px #0009; }
+.artwork-turntable .artwork-spindle { display: none; }
+.artwork-album-card {
+  position: absolute;
+  width: 64%; height: 64%;
+  left: 34.5%; top: 18%;
+  border-radius: 6%;
+  overflow: hidden;
+}
+.artwork-realistic .artwork-album-card { box-shadow: -4px 6px 20px #0008; }
+.artwork-tonearm {
+  position: absolute;
+  width: 57%; height: 3%;
+  left: 89%; top: 20%;
+  transform-origin: 0 50%;
+  transform: rotate(144deg);
+  border-radius: 10px;
+  background: linear-gradient(#eee, #757575 48%, #d7d7d7);
+  box-shadow: 0 3px 6px #0009;
+}
+.artwork-tonearm::before {
+  content: ''; position: absolute; width: 15%; height: 300%;
+  left: -5%; top: -105%; border-radius: 50%; background: #222; border: 2px solid #555;
+}
+.artwork-tonearm > span { position: absolute; width: 27%; height: 260%; top: -75%; right: -7%; background: #181818; border-radius: 3px; border: 1px solid #555; }
+.artwork-turntable .artwork-tonearm { top: 17%; left: 88%; width: 64%; transform: rotate(128deg); }
+.artwork-deck { position: absolute; top: 8%; right: 0; bottom: 0; left: 0; border-radius: 12px; background: #161616; border: 1px solid #303030; }
+.artwork-deck::after { content: ''; position: absolute; width: 5%; height: 2%; right: 8%; bottom: 6%; background: #aaa; border-radius: 2px; }
+.cover-small .artwork-lettering { display: none; }
+@keyframes artwork-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) {
+  .artwork[data-spinning="true"] .artwork-rotor { animation-play-state: paused; will-change: auto; }
+}

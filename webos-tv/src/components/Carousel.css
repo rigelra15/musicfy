@@ -1,0 +1,12 @@
+/* A row of cards on a fixed number of columns, so nothing is cut off at rest. */
+.carousel { --cols: 4; --pad: clamp(6px, calc(.5 * var(--player-vw, 1vw)), 12px); --gap: clamp(14px, calc(1.2 * var(--player-vw, 1vw)), 26px); position: relative; margin-inline: calc(-1 * var(--bleed)); }
+.carousel.is-wide { --cols: 2; }
+.carousel-track { position: relative; display: flex; gap: var(--gap); overflow-x: auto; overflow-y: hidden; padding: 10px calc(var(--bleed) + var(--pad)) 16px; scroll-padding-inline: calc(var(--bleed) + var(--pad)); scroll-snap-type: x proximity; scroll-behavior: smooth; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+.carousel-track::-webkit-scrollbar { display: none; }
+.carousel-track > * { flex: 0 0 calc((100% - (var(--cols) - 1) * var(--gap)) / var(--cols)); min-width: 0; scroll-snap-align: start; }
+.carousel-nav { position: absolute; top: var(--nav-top, 45%); z-index: 3; display: grid; place-items: center; width: clamp(48px, calc(3.4 * var(--player-vw, 1vw)), 68px); height: clamp(48px, calc(3.4 * var(--player-vw, 1vw)), 68px); padding: 0; border: 1px solid rgba(255, 255, 255, .16); border-radius: 50%; background: rgba(24, 24, 27, .92); color: #fff; font-size: clamp(26px, calc(1.9 * var(--player-vw, 1vw)), 36px); opacity: 0; pointer-events: none; transform: translateY(-50%) scale(.9); transition: opacity 160ms ease-out, transform 160ms ease-out, background 120ms; box-shadow: 0 6px 22px rgba(0, 0, 0, .55); }
+.carousel-prev { left: calc(var(--bleed) + clamp(4px, calc(.6 * var(--player-vw, 1vw)), 14px)); }
+.carousel-next { right: calc(var(--bleed) + clamp(4px, calc(.6 * var(--player-vw, 1vw)), 14px)); }
+.carousel:hover .carousel-nav.is-shown, .carousel:focus-within .carousel-nav.is-shown { opacity: 1; pointer-events: auto; transform: translateY(-50%) scale(1); }
+.carousel-nav:hover { background: #fff; color: #000; }
+@media (prefers-reduced-motion: reduce) { .carousel-track { scroll-behavior: auto; } .carousel-nav { transition: none; } }

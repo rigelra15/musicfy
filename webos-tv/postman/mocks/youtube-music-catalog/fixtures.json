@@ -1,0 +1,1676 @@
+{
+ "home": {
+  "contents": {
+   "singleColumnBrowseResultsRenderer": {
+    "tabs": [
+     {
+      "tabRenderer": {
+       "content": {
+        "sectionListRenderer": {
+         "contents": [
+          {
+           "musicCarouselShelfRenderer": {
+            "header": {
+             "musicCarouselShelfBasicHeaderRenderer": {
+              "title": {
+               "runs": [
+                {
+                 "text": "Quick picks"
+                }
+               ]
+              }
+             }
+            },
+            "contents": [
+             {
+              "musicTwoRowItemRenderer": {
+               "title": {
+                "runs": [
+                 {
+                  "text": "Malam di Kota"
+                 }
+                ]
+               },
+               "subtitle": {
+                "runs": [
+                 {
+                  "text": "Song"
+                 },
+                 {
+                  "text": " • "
+                 },
+                 {
+                  "text": "Coldplay",
+                  "navigationEndpoint": {
+                   "browseEndpoint": {
+                    "browseId": "UCartist1",
+                    "browseEndpointContextSupportedConfigs": {
+                     "browseEndpointContextMusicConfig": {
+                      "pageType": "MUSIC_PAGE_TYPE_ARTIST"
+                     }
+                    }
+                   }
+                  }
+                 }
+                ]
+               },
+               "navigationEndpoint": {
+                "watchEndpoint": {
+                 "videoId": "simulated-a",
+                 "watchEndpointMusicSupportedConfigs": {
+                  "watchEndpointMusicConfig": {
+                   "musicVideoType": "MUSIC_VIDEO_TYPE_ATV"
+                  }
+                 }
+                }
+               },
+               "thumbnailRenderer": {
+                "musicThumbnailRenderer": {
+                 "thumbnail": {
+                  "thumbnails": [
+                   {
+                    "url": "https://lh3.googleusercontent.com/a=w60",
+                    "width": 60,
+                    "height": 60
+                   },
+                   {
+                    "url": "https://lh3.googleusercontent.com/a=w226",
+                    "width": 226,
+                    "height": 226
+                   }
+                  ]
+                 }
+                }
+               }
+              }
+             },
+             {
+              "musicTwoRowItemRenderer": {
+               "title": {
+                "runs": [
+                 {
+                  "text": "Ruang Sore"
+                 }
+                ]
+               },
+               "subtitle": {
+                "runs": [
+                 {
+                  "text": "Album"
+                 },
+                 {
+                  "text": " • "
+                 },
+                 {
+                  "text": "Coldplay",
+                  "navigationEndpoint": {
+                   "browseEndpoint": {
+                    "browseId": "UCartist1",
+                    "browseEndpointContextSupportedConfigs": {
+                     "browseEndpointContextMusicConfig": {
+                      "pageType": "MUSIC_PAGE_TYPE_ARTIST"
+                     }
+                    }
+                   }
+                  }
+                 },
+                 {
+                  "text": " • "
+                 },
+                 {
+                  "text": "2021"
+                 }
+                ]
+               },
+               "navigationEndpoint": {
+                "browseEndpoint": {
+                 "browseId": "MPREsimulated",
+                 "browseEndpointContextSupportedConfigs": {
+                  "browseEndpointContextMusicConfig": {
+                   "pageType": "MUSIC_PAGE_TYPE_ALBUM"
+                  }
+                 }
+                }
+               },
+               "thumbnailRenderer": {
+                "musicThumbnailRenderer": {
+                 "thumbnail": {
+                  "thumbnails": [
+                   {
+                    "url": "https://lh3.googleusercontent.com/a=w60",
+                    "width": 60,
+                    "height": 60
+                   },
+                   {
+                    "url": "https://lh3.googleusercontent.com/a=w226",
+                    "width": 226,
+                    "height": 226
+                   }
+                  ]
+                 }
+                }
+               },
+               "thumbnailOverlay": {
+                "musicItemThumbnailOverlayRenderer": {
+                 "content": {
+                  "musicPlayButtonRenderer": {
+                   "playNavigationEndpoint": {
+                    "watchPlaylistEndpoint": {
+                     "playlistId": "OLAK5uy_MPREsimulated"
+                    }
+                   }
+                  }
+                 }
+                }
+               }
+              }
+             },
+             {
+              "musicTwoRowItemRenderer": {
+               "title": {
+                "runs": [
+                 {
+                  "text": "Senja"
+                 }
+                ]
+               },
+               "subtitle": {
+                "runs": [
+                 {
+                  "text": "3.2M subscribers"
+                 }
+                ]
+               },
+               "navigationEndpoint": {
+                "browseEndpoint": {
+                 "browseId": "UCsimulated",
+                 "browseEndpointContextSupportedConfigs": {
+                  "browseEndpointContextMusicConfig": {
+                   "pageType": "MUSIC_PAGE_TYPE_ARTIST"
+                  }
+                 }
+                }
+               },
+               "thumbnailRenderer": {
+                "musicThumbnailRenderer": {
+                 "thumbnail": {
+                  "thumbnails": [
+                   {
+                    "url": "https://lh3.googleusercontent.com/a=w60",
+                    "width": 60,
+                    "height": 60
+                   },
+                   {
+                    "url": "https://lh3.googleusercontent.com/a=w226",
+                    "width": 226,
+                    "height": 226
+                   }
+                  ]
+                 }
+                }
+               }
+              }
+             },
+             {
+              "musicTwoRowItemRenderer": {
+               "title": {
+                "runs": [
+                 {
+                  "text": "Santai"
+                 }
+                ]
+               },
+               "subtitle": {
+                "runs": [
+                 {
+                  "text": "Playlist"
+                 },
+                 {
+                  "text": " • "
+                 },
+                 {
+                  "text": "YouTube Music"
+                 }
+                ]
+               },
+               "navigationEndpoint": {
+                "browseEndpoint": {
+                 "browseId": "VLPLsimulated",
+                 "browseEndpointContextSupportedConfigs": {
+                  "browseEndpointContextMusicConfig": {
+                   "pageType": "MUSIC_PAGE_TYPE_PLAYLIST"
+                  }
+                 }
+                }
+               },
+               "thumbnailRenderer": {
+                "musicThumbnailRenderer": {
+                 "thumbnail": {
+                  "thumbnails": [
+                   {
+                    "url": "https://lh3.googleusercontent.com/a=w60",
+                    "width": 60,
+                    "height": 60
+                   },
+                   {
+                    "url": "https://lh3.googleusercontent.com/a=w226",
+                    "width": 226,
+                    "height": 226
+                   }
+                  ]
+                 }
+                }
+               }
+              }
+             }
+            ]
+           }
+          }
+         ],
+         "header": {
+          "chipCloudRenderer": {
+           "chips": [
+            {
+             "chipCloudChipRenderer": {
+              "text": {
+               "runs": [
+                {
+                 "text": "Santai"
+                }
+               ]
+              },
+              "navigationEndpoint": {
+               "browseEndpoint": {
+                "browseId": "FEmusic_home",
+                "params": "chip_Santai"
+               }
+              }
+             }
+            },
+            {
+             "chipCloudChipRenderer": {
+              "text": {
+               "runs": [
+                {
+                 "text": "Fokus"
+                }
+               ]
+              },
+              "navigationEndpoint": {
+               "browseEndpoint": {
+                "browseId": "FEmusic_home",
+                "params": "chip_Fokus"
+               }
+              }
+             }
+            }
+           ]
+          }
+         },
+         "continuations": [
+          {
+           "nextContinuationData": {
+            "continuation": "SIMHOME1"
+           }
+          }
+         ]
+        }
+       }
+      }
+     }
+    ]
+   }
+  }
+ },
+ "search": {
+  "contents": {
+   "tabbedSearchResultsRenderer": {
+    "tabs": [
+     {
+      "tabRenderer": {
+       "content": {
+        "sectionListRenderer": {
+         "contents": [
+          {
+           "musicShelfRenderer": {
+            "title": {
+             "runs": [
+              {
+               "text": "Songs"
+              }
+             ]
+            },
+            "contents": [
+             {
+              "musicResponsiveListItemRenderer": {
+               "playlistItemData": {
+                "videoId": "simulated-a"
+               },
+               "thumbnail": {
+                "musicThumbnailRenderer": {
+                 "thumbnail": {
+                  "thumbnails": [
+                   {
+                    "url": "https://lh3.googleusercontent.com/a=w60",
+                    "width": 60,
+                    "height": 60
+                   },
+                   {
+                    "url": "https://lh3.googleusercontent.com/a=w226",
+                    "width": 226,
+                    "height": 226
+                   }
+                  ]
+                 }
+                }
+               },
+               "flexColumns": [
+                {
+                 "musicResponsiveListItemFlexColumnRenderer": {
+                  "text": {
+                   "runs": [
+                    {
+                     "text": "Malam di Kota",
+                     "navigationEndpoint": {
+                      "watchEndpoint": {
+                       "videoId": "simulated-a",
+                       "watchEndpointMusicSupportedConfigs": {
+                        "watchEndpointMusicConfig": {
+                         "musicVideoType": "MUSIC_VIDEO_TYPE_ATV"
+                        }
+                       }
+                      }
+                     }
+                    }
+                   ]
+                  }
+                 }
+                },
+                {
+                 "musicResponsiveListItemFlexColumnRenderer": {
+                  "text": {
+                   "runs": [
+                    {
+                     "text": "Song"
+                    },
+                    {
+                     "text": " • "
+                    },
+                    {
+                     "text": "Senja",
+                     "navigationEndpoint": {
+                      "browseEndpoint": {
+                       "browseId": "UCartist1",
+                       "browseEndpointContextSupportedConfigs": {
+                        "browseEndpointContextMusicConfig": {
+                         "pageType": "MUSIC_PAGE_TYPE_ARTIST"
+                        }
+                       }
+                      }
+                     }
+                    },
+                    {
+                     "text": " • "
+                    },
+                    {
+                     "text": "Ruang Sore",
+                     "navigationEndpoint": {
+                      "browseEndpoint": {
+                       "browseId": "MPREb_album1",
+                       "browseEndpointContextSupportedConfigs": {
+                        "browseEndpointContextMusicConfig": {
+                         "pageType": "MUSIC_PAGE_TYPE_ALBUM"
+                        }
+                       }
+                      }
+                     }
+                    },
+                    {
+                     "text": " • "
+                    },
+                    {
+                     "text": "3:42"
+                    }
+                   ]
+                  }
+                 }
+                }
+               ]
+              }
+             },
+             {
+              "continuationItemRenderer": {
+               "continuationEndpoint": {
+                "continuationCommand": {
+                 "token": "SIMSEARCH1"
+                }
+               }
+              }
+             }
+            ]
+           }
+          }
+         ]
+        }
+       }
+      }
+     }
+    ]
+   }
+  }
+ },
+ "suggest": {
+  "contents": [
+   {
+    "searchSuggestionsSectionRenderer": {
+     "contents": [
+      {
+       "searchSuggestionRenderer": {
+        "suggestion": {
+         "runs": [
+          {
+           "text": "malam di kota"
+          }
+         ]
+        }
+       }
+      }
+     ]
+    }
+   }
+  ]
+ },
+ "album": {
+  "contents": {
+   "twoColumnBrowseResultsRenderer": {
+    "tabs": [
+     {
+      "tabRenderer": {
+       "content": {
+        "sectionListRenderer": {
+         "contents": [
+          {
+           "musicResponsiveHeaderRenderer": {
+            "title": {
+             "runs": [
+              {
+               "text": "Music of the Spheres"
+              }
+             ]
+            },
+            "subtitle": {
+             "runs": [
+              {
+               "text": "Album"
+              },
+              {
+               "text": " • "
+              },
+              {
+               "text": "2021"
+              }
+             ]
+            },
+            "straplineTextOne": {
+             "runs": [
+              {
+               "text": "Coldplay",
+               "navigationEndpoint": {
+                "browseEndpoint": {
+                 "browseId": "UCartist1",
+                 "browseEndpointContextSupportedConfigs": {
+                  "browseEndpointContextMusicConfig": {
+                   "pageType": "MUSIC_PAGE_TYPE_ARTIST"
+                  }
+                 }
+                }
+               }
+              }
+             ]
+            },
+            "secondSubtitle": {
+             "runs": [
+              {
+               "text": "12 songs"
+              },
+              {
+               "text": " • "
+              },
+              {
+               "text": "45 minutes"
+              }
+             ]
+            },
+            "description": {
+             "musicDescriptionShelfRenderer": {
+              "description": {
+               "runs": [
+                {
+                 "text": "The ninth studio album."
+                }
+               ]
+              }
+             }
+            },
+            "thumbnail": {
+             "musicThumbnailRenderer": {
+              "thumbnail": {
+               "thumbnails": [
+                {
+                 "url": "https://lh3.googleusercontent.com/album=w544",
+                 "width": 60,
+                 "height": 60
+                },
+                {
+                 "url": "https://lh3.googleusercontent.com/album=w544",
+                 "width": 226,
+                 "height": 226
+                }
+               ]
+              }
+             }
+            },
+            "buttons": [
+             {
+              "musicPlayButtonRenderer": {
+               "playNavigationEndpoint": {
+                "watchEndpoint": {
+                 "playlistId": "OLAK5uy_album1",
+                 "videoId": "v1"
+                }
+               }
+              }
+             }
+            ]
+           }
+          }
+         ]
+        }
+       }
+      }
+     }
+    ],
+    "secondaryContents": {
+     "sectionListRenderer": {
+      "contents": [
+       {
+        "musicShelfRenderer": {
+         "contents": [
+          {
+           "musicResponsiveListItemRenderer": {
+            "playlistItemData": {
+             "videoId": "simulated-a"
+            },
+            "thumbnail": {
+             "musicThumbnailRenderer": {
+              "thumbnail": {
+               "thumbnails": [
+                {
+                 "url": "https://lh3.googleusercontent.com/a=w60",
+                 "width": 60,
+                 "height": 60
+                },
+                {
+                 "url": "https://lh3.googleusercontent.com/a=w226",
+                 "width": 226,
+                 "height": 226
+                }
+               ]
+              }
+             }
+            },
+            "flexColumns": [
+             {
+              "musicResponsiveListItemFlexColumnRenderer": {
+               "text": {
+                "runs": [
+                 {
+                  "text": "Malam di Kota",
+                  "navigationEndpoint": {
+                   "watchEndpoint": {
+                    "videoId": "simulated-a",
+                    "watchEndpointMusicSupportedConfigs": {
+                     "watchEndpointMusicConfig": {
+                      "musicVideoType": "MUSIC_VIDEO_TYPE_ATV"
+                     }
+                    }
+                   }
+                  }
+                 }
+                ]
+               }
+              }
+             },
+             {
+              "musicResponsiveListItemFlexColumnRenderer": {
+               "text": {
+                "runs": [
+                 {
+                  "text": "Coldplay",
+                  "navigationEndpoint": {
+                   "browseEndpoint": {
+                    "browseId": "UCartist1",
+                    "browseEndpointContextSupportedConfigs": {
+                     "browseEndpointContextMusicConfig": {
+                      "pageType": "MUSIC_PAGE_TYPE_ARTIST"
+                     }
+                    }
+                   }
+                  }
+                 },
+                 {
+                  "text": " • "
+                 },
+                 {
+                  "text": "3:42"
+                 }
+                ]
+               }
+              }
+             }
+            ]
+           }
+          }
+         ]
+        }
+       },
+       {
+        "musicCarouselShelfRenderer": {
+         "header": {
+          "musicCarouselShelfBasicHeaderRenderer": {
+           "title": {
+            "runs": [
+             {
+              "text": "More by Coldplay"
+             }
+            ]
+           }
+          }
+         },
+         "contents": [
+          {
+           "musicTwoRowItemRenderer": {
+            "title": {
+             "runs": [
+              {
+               "text": "Parachutes"
+              }
+             ]
+            },
+            "subtitle": {
+             "runs": [
+              {
+               "text": "Album"
+              },
+              {
+               "text": " • "
+              },
+              {
+               "text": "Coldplay",
+               "navigationEndpoint": {
+                "browseEndpoint": {
+                 "browseId": "UCartist1",
+                 "browseEndpointContextSupportedConfigs": {
+                  "browseEndpointContextMusicConfig": {
+                   "pageType": "MUSIC_PAGE_TYPE_ARTIST"
+                  }
+                 }
+                }
+               }
+              },
+              {
+               "text": " • "
+              },
+              {
+               "text": "2021"
+              }
+             ]
+            },
+            "navigationEndpoint": {
+             "browseEndpoint": {
+              "browseId": "MPREb_para",
+              "browseEndpointContextSupportedConfigs": {
+               "browseEndpointContextMusicConfig": {
+                "pageType": "MUSIC_PAGE_TYPE_ALBUM"
+               }
+              }
+             }
+            },
+            "thumbnailRenderer": {
+             "musicThumbnailRenderer": {
+              "thumbnail": {
+               "thumbnails": [
+                {
+                 "url": "https://lh3.googleusercontent.com/a=w60",
+                 "width": 60,
+                 "height": 60
+                },
+                {
+                 "url": "https://lh3.googleusercontent.com/a=w226",
+                 "width": 226,
+                 "height": 226
+                }
+               ]
+              }
+             }
+            },
+            "thumbnailOverlay": {
+             "musicItemThumbnailOverlayRenderer": {
+              "content": {
+               "musicPlayButtonRenderer": {
+                "playNavigationEndpoint": {
+                 "watchPlaylistEndpoint": {
+                  "playlistId": "OLAK5uy_MPREb_para"
+                 }
+                }
+               }
+              }
+             }
+            }
+           }
+          }
+         ]
+        }
+       }
+      ]
+     }
+    }
+   }
+  }
+ },
+ "artist": {
+  "header": {
+   "musicImmersiveHeaderRenderer": {
+    "title": {
+     "runs": [
+      {
+       "text": "Coldplay"
+      }
+     ]
+    },
+    "description": {
+     "runs": [
+      {
+       "text": "British rock band."
+      }
+     ]
+    },
+    "thumbnail": {
+     "musicThumbnailRenderer": {
+      "thumbnail": {
+       "thumbnails": [
+        {
+         "url": "https://lh3.googleusercontent.com/artist=w544",
+         "width": 60,
+         "height": 60
+        },
+        {
+         "url": "https://lh3.googleusercontent.com/artist=w544",
+         "width": 226,
+         "height": 226
+        }
+       ]
+      }
+     }
+    },
+    "subscriptionButton": {
+     "subscribeButtonRenderer": {
+      "subscriberCountText": {
+       "runs": [
+        {
+         "text": "3.2M subscribers"
+        }
+       ]
+      }
+     }
+    },
+    "playButton": {
+     "buttonRenderer": {
+      "navigationEndpoint": {
+       "watchEndpoint": {
+        "videoId": "v1",
+        "playlistId": "RDAMVM1"
+       }
+      }
+     }
+    },
+    "startRadioButton": {
+     "buttonRenderer": {
+      "navigationEndpoint": {
+       "watchPlaylistEndpoint": {
+        "playlistId": "RDEMartist"
+       }
+      }
+     }
+    }
+   }
+  },
+  "contents": {
+   "singleColumnBrowseResultsRenderer": {
+    "tabs": [
+     {
+      "tabRenderer": {
+       "content": {
+        "sectionListRenderer": {
+         "contents": [
+          {
+           "musicShelfRenderer": {
+            "title": {
+             "runs": [
+              {
+               "text": "Songs"
+              }
+             ]
+            },
+            "contents": [
+             {
+              "musicResponsiveListItemRenderer": {
+               "playlistItemData": {
+                "videoId": "v-yellow"
+               },
+               "thumbnail": {
+                "musicThumbnailRenderer": {
+                 "thumbnail": {
+                  "thumbnails": [
+                   {
+                    "url": "https://lh3.googleusercontent.com/a=w60",
+                    "width": 60,
+                    "height": 60
+                   },
+                   {
+                    "url": "https://lh3.googleusercontent.com/a=w226",
+                    "width": 226,
+                    "height": 226
+                   }
+                  ]
+                 }
+                }
+               },
+               "flexColumns": [
+                {
+                 "musicResponsiveListItemFlexColumnRenderer": {
+                  "text": {
+                   "runs": [
+                    {
+                     "text": "Yellow",
+                     "navigationEndpoint": {
+                      "watchEndpoint": {
+                       "videoId": "v-yellow",
+                       "watchEndpointMusicSupportedConfigs": {
+                        "watchEndpointMusicConfig": {
+                         "musicVideoType": "MUSIC_VIDEO_TYPE_ATV"
+                        }
+                       }
+                      }
+                     }
+                    }
+                   ]
+                  }
+                 }
+                },
+                {
+                 "musicResponsiveListItemFlexColumnRenderer": {
+                  "text": {
+                   "runs": [
+                    {
+                     "text": "Coldplay",
+                     "navigationEndpoint": {
+                      "browseEndpoint": {
+                       "browseId": "UCartist1",
+                       "browseEndpointContextSupportedConfigs": {
+                        "browseEndpointContextMusicConfig": {
+                         "pageType": "MUSIC_PAGE_TYPE_ARTIST"
+                        }
+                       }
+                      }
+                     }
+                    },
+                    {
+                     "text": " • "
+                    },
+                    {
+                     "text": "Parachutes",
+                     "navigationEndpoint": {
+                      "browseEndpoint": {
+                       "browseId": "MPREb_album1",
+                       "browseEndpointContextSupportedConfigs": {
+                        "browseEndpointContextMusicConfig": {
+                         "pageType": "MUSIC_PAGE_TYPE_ALBUM"
+                        }
+                       }
+                      }
+                     }
+                    },
+                    {
+                     "text": " • "
+                    },
+                    {
+                     "text": "4:29"
+                    }
+                   ]
+                  }
+                 }
+                }
+               ]
+              }
+             },
+             {
+              "musicResponsiveListItemRenderer": {
+               "playlistItemData": {
+                "videoId": "v-fix"
+               },
+               "thumbnail": {
+                "musicThumbnailRenderer": {
+                 "thumbnail": {
+                  "thumbnails": [
+                   {
+                    "url": "https://lh3.googleusercontent.com/a=w60",
+                    "width": 60,
+                    "height": 60
+                   },
+                   {
+                    "url": "https://lh3.googleusercontent.com/a=w226",
+                    "width": 226,
+                    "height": 226
+                   }
+                  ]
+                 }
+                }
+               },
+               "flexColumns": [
+                {
+                 "musicResponsiveListItemFlexColumnRenderer": {
+                  "text": {
+                   "runs": [
+                    {
+                     "text": "Fix You",
+                     "navigationEndpoint": {
+                      "watchEndpoint": {
+                       "videoId": "v-fix",
+                       "watchEndpointMusicSupportedConfigs": {
+                        "watchEndpointMusicConfig": {
+                         "musicVideoType": "MUSIC_VIDEO_TYPE_ATV"
+                        }
+                       }
+                      }
+                     }
+                    }
+                   ]
+                  }
+                 }
+                },
+                {
+                 "musicResponsiveListItemFlexColumnRenderer": {
+                  "text": {
+                   "runs": [
+                    {
+                     "text": "Coldplay",
+                     "navigationEndpoint": {
+                      "browseEndpoint": {
+                       "browseId": "UCartist1",
+                       "browseEndpointContextSupportedConfigs": {
+                        "browseEndpointContextMusicConfig": {
+                         "pageType": "MUSIC_PAGE_TYPE_ARTIST"
+                        }
+                       }
+                      }
+                     }
+                    },
+                    {
+                     "text": " • "
+                    },
+                    {
+                     "text": "X&Y",
+                     "navigationEndpoint": {
+                      "browseEndpoint": {
+                       "browseId": "MPREb_album1",
+                       "browseEndpointContextSupportedConfigs": {
+                        "browseEndpointContextMusicConfig": {
+                         "pageType": "MUSIC_PAGE_TYPE_ALBUM"
+                        }
+                       }
+                      }
+                     }
+                    },
+                    {
+                     "text": " • "
+                    },
+                    {
+                     "text": "4:55"
+                    }
+                   ]
+                  }
+                 }
+                }
+               ]
+              }
+             }
+            ],
+            "bottomEndpoint": {
+             "browseEndpoint": {
+              "browseId": "VLOLAK5uy_songs"
+             }
+            }
+           }
+          },
+          {
+           "musicCarouselShelfRenderer": {
+            "header": {
+             "musicCarouselShelfBasicHeaderRenderer": {
+              "title": {
+               "runs": [
+                {
+                 "text": "Albums"
+                }
+               ]
+              },
+              "moreContentButton": {
+               "buttonRenderer": {
+                "navigationEndpoint": {
+                 "browseEndpoint": {
+                  "browseId": "UCartist1",
+                  "params": "albumsParams"
+                 }
+                }
+               }
+              }
+             }
+            },
+            "contents": [
+             {
+              "musicTwoRowItemRenderer": {
+               "title": {
+                "runs": [
+                 {
+                  "text": "Parachutes"
+                 }
+                ]
+               },
+               "subtitle": {
+                "runs": [
+                 {
+                  "text": "Album"
+                 },
+                 {
+                  "text": " • "
+                 },
+                 {
+                  "text": "Coldplay",
+                  "navigationEndpoint": {
+                   "browseEndpoint": {
+                    "browseId": "UCartist1",
+                    "browseEndpointContextSupportedConfigs": {
+                     "browseEndpointContextMusicConfig": {
+                      "pageType": "MUSIC_PAGE_TYPE_ARTIST"
+                     }
+                    }
+                   }
+                  }
+                 },
+                 {
+                  "text": " • "
+                 },
+                 {
+                  "text": "2021"
+                 }
+                ]
+               },
+               "navigationEndpoint": {
+                "browseEndpoint": {
+                 "browseId": "MPREb_para",
+                 "browseEndpointContextSupportedConfigs": {
+                  "browseEndpointContextMusicConfig": {
+                   "pageType": "MUSIC_PAGE_TYPE_ALBUM"
+                  }
+                 }
+                }
+               },
+               "thumbnailRenderer": {
+                "musicThumbnailRenderer": {
+                 "thumbnail": {
+                  "thumbnails": [
+                   {
+                    "url": "https://lh3.googleusercontent.com/a=w60",
+                    "width": 60,
+                    "height": 60
+                   },
+                   {
+                    "url": "https://lh3.googleusercontent.com/a=w226",
+                    "width": 226,
+                    "height": 226
+                   }
+                  ]
+                 }
+                }
+               },
+               "thumbnailOverlay": {
+                "musicItemThumbnailOverlayRenderer": {
+                 "content": {
+                  "musicPlayButtonRenderer": {
+                   "playNavigationEndpoint": {
+                    "watchPlaylistEndpoint": {
+                     "playlistId": "OLAK5uy_MPREb_para"
+                    }
+                   }
+                  }
+                 }
+                }
+               }
+              }
+             },
+             {
+              "musicTwoRowItemRenderer": {
+               "title": {
+                "runs": [
+                 {
+                  "text": "X&Y"
+                 }
+                ]
+               },
+               "subtitle": {
+                "runs": [
+                 {
+                  "text": "Album"
+                 },
+                 {
+                  "text": " • "
+                 },
+                 {
+                  "text": "Coldplay",
+                  "navigationEndpoint": {
+                   "browseEndpoint": {
+                    "browseId": "UCartist1",
+                    "browseEndpointContextSupportedConfigs": {
+                     "browseEndpointContextMusicConfig": {
+                      "pageType": "MUSIC_PAGE_TYPE_ARTIST"
+                     }
+                    }
+                   }
+                  }
+                 },
+                 {
+                  "text": " • "
+                 },
+                 {
+                  "text": "2021"
+                 }
+                ]
+               },
+               "navigationEndpoint": {
+                "browseEndpoint": {
+                 "browseId": "MPREb_xy",
+                 "browseEndpointContextSupportedConfigs": {
+                  "browseEndpointContextMusicConfig": {
+                   "pageType": "MUSIC_PAGE_TYPE_ALBUM"
+                  }
+                 }
+                }
+               },
+               "thumbnailRenderer": {
+                "musicThumbnailRenderer": {
+                 "thumbnail": {
+                  "thumbnails": [
+                   {
+                    "url": "https://lh3.googleusercontent.com/a=w60",
+                    "width": 60,
+                    "height": 60
+                   },
+                   {
+                    "url": "https://lh3.googleusercontent.com/a=w226",
+                    "width": 226,
+                    "height": 226
+                   }
+                  ]
+                 }
+                }
+               },
+               "thumbnailOverlay": {
+                "musicItemThumbnailOverlayRenderer": {
+                 "content": {
+                  "musicPlayButtonRenderer": {
+                   "playNavigationEndpoint": {
+                    "watchPlaylistEndpoint": {
+                     "playlistId": "OLAK5uy_MPREb_xy"
+                    }
+                   }
+                  }
+                 }
+                }
+               }
+              }
+             }
+            ]
+           }
+          },
+          {
+           "musicCarouselShelfRenderer": {
+            "header": {
+             "musicCarouselShelfBasicHeaderRenderer": {
+              "title": {
+               "runs": [
+                {
+                 "text": "Fans might also like"
+                }
+               ]
+              }
+             }
+            },
+            "contents": [
+             {
+              "musicTwoRowItemRenderer": {
+               "title": {
+                "runs": [
+                 {
+                  "text": "Keane"
+                 }
+                ]
+               },
+               "subtitle": {
+                "runs": [
+                 {
+                  "text": "3.2M subscribers"
+                 }
+                ]
+               },
+               "navigationEndpoint": {
+                "browseEndpoint": {
+                 "browseId": "UCkeane",
+                 "browseEndpointContextSupportedConfigs": {
+                  "browseEndpointContextMusicConfig": {
+                   "pageType": "MUSIC_PAGE_TYPE_ARTIST"
+                  }
+                 }
+                }
+               },
+               "thumbnailRenderer": {
+                "musicThumbnailRenderer": {
+                 "thumbnail": {
+                  "thumbnails": [
+                   {
+                    "url": "https://lh3.googleusercontent.com/a=w60",
+                    "width": 60,
+                    "height": 60
+                   },
+                   {
+                    "url": "https://lh3.googleusercontent.com/a=w226",
+                    "width": 226,
+                    "height": 226
+                   }
+                  ]
+                 }
+                }
+               }
+              }
+             },
+             {
+              "musicTwoRowItemRenderer": {
+               "title": {
+                "runs": [
+                 {
+                  "text": "Travis"
+                 }
+                ]
+               },
+               "subtitle": {
+                "runs": [
+                 {
+                  "text": "3.2M subscribers"
+                 }
+                ]
+               },
+               "navigationEndpoint": {
+                "browseEndpoint": {
+                 "browseId": "UCtravis",
+                 "browseEndpointContextSupportedConfigs": {
+                  "browseEndpointContextMusicConfig": {
+                   "pageType": "MUSIC_PAGE_TYPE_ARTIST"
+                  }
+                 }
+                }
+               },
+               "thumbnailRenderer": {
+                "musicThumbnailRenderer": {
+                 "thumbnail": {
+                  "thumbnails": [
+                   {
+                    "url": "https://lh3.googleusercontent.com/a=w60",
+                    "width": 60,
+                    "height": 60
+                   },
+                   {
+                    "url": "https://lh3.googleusercontent.com/a=w226",
+                    "width": 226,
+                    "height": 226
+                   }
+                  ]
+                 }
+                }
+               }
+              }
+             }
+            ]
+           }
+          },
+          {
+           "musicDescriptionShelfRenderer": {
+            "header": {
+             "runs": [
+              {
+               "text": "About"
+              }
+             ]
+            },
+            "description": {
+             "runs": [
+              {
+               "text": "British rock band formed in 1997."
+              }
+             ]
+            }
+           }
+          }
+         ]
+        }
+       }
+      }
+     }
+    ]
+   }
+  }
+ },
+ "next": {
+  "contents": {
+   "singleColumnMusicWatchNextResultsRenderer": {
+    "tabbedRenderer": {
+     "watchNextTabbedResultsRenderer": {
+      "tabs": [
+       {
+        "tabRenderer": {
+         "content": {
+          "musicQueueRenderer": {
+           "header": {
+            "musicQueueHeaderRenderer": {
+             "subtitle": {
+              "runs": [
+               {
+                "text": "Radio"
+               }
+              ]
+             }
+            }
+           },
+           "content": {
+            "playlistPanelRenderer": {
+             "contents": [
+              {
+               "playlistPanelVideoRenderer": {
+                "videoId": "simulated-a",
+                "title": {
+                 "runs": [
+                  {
+                   "text": "Malam di Kota"
+                  }
+                 ]
+                },
+                "longBylineText": {
+                 "runs": [
+                  {
+                   "text": "Coldplay",
+                   "navigationEndpoint": {
+                    "browseEndpoint": {
+                     "browseId": "UCartist1",
+                     "browseEndpointContextSupportedConfigs": {
+                      "browseEndpointContextMusicConfig": {
+                       "pageType": "MUSIC_PAGE_TYPE_ARTIST"
+                      }
+                     }
+                    }
+                   }
+                  },
+                  {
+                   "text": " • "
+                  },
+                  {
+                   "text": "Parachutes",
+                   "navigationEndpoint": {
+                    "browseEndpoint": {
+                     "browseId": "MPREb_para",
+                     "browseEndpointContextSupportedConfigs": {
+                      "browseEndpointContextMusicConfig": {
+                       "pageType": "MUSIC_PAGE_TYPE_ALBUM"
+                      }
+                     }
+                    }
+                   }
+                  },
+                  {
+                   "text": " • "
+                  },
+                  {
+                   "text": "2000"
+                  }
+                 ]
+                },
+                "lengthText": {
+                 "runs": [
+                  {
+                   "text": "4:29"
+                  }
+                 ]
+                },
+                "thumbnail": {
+                 "thumbnails": [
+                  {
+                   "url": "https://i.ytimg.com/vi/simulated-a/sddefault.jpg",
+                   "width": 400
+                  }
+                 ]
+                },
+                "navigationEndpoint": {
+                 "watchEndpoint": {
+                  "videoId": "simulated-a",
+                  "playlistId": "RDAMVMsimulated-a",
+                  "watchEndpointMusicSupportedConfigs": {
+                   "watchEndpointMusicConfig": {
+                    "musicVideoType": "MUSIC_VIDEO_TYPE_ATV"
+                   }
+                  }
+                 }
+                },
+                "selected": true
+               }
+              },
+              {
+               "playlistPanelVideoRenderer": {
+                "videoId": "simulated-b",
+                "title": {
+                 "runs": [
+                  {
+                   "text": "Pagi Lagi"
+                  }
+                 ]
+                },
+                "longBylineText": {
+                 "runs": [
+                  {
+                   "text": "Coldplay",
+                   "navigationEndpoint": {
+                    "browseEndpoint": {
+                     "browseId": "UCartist1",
+                     "browseEndpointContextSupportedConfigs": {
+                      "browseEndpointContextMusicConfig": {
+                       "pageType": "MUSIC_PAGE_TYPE_ARTIST"
+                      }
+                     }
+                    }
+                   }
+                  },
+                  {
+                   "text": " • "
+                  },
+                  {
+                   "text": "Parachutes",
+                   "navigationEndpoint": {
+                    "browseEndpoint": {
+                     "browseId": "MPREb_para",
+                     "browseEndpointContextSupportedConfigs": {
+                      "browseEndpointContextMusicConfig": {
+                       "pageType": "MUSIC_PAGE_TYPE_ALBUM"
+                      }
+                     }
+                    }
+                   }
+                  },
+                  {
+                   "text": " • "
+                  },
+                  {
+                   "text": "2000"
+                  }
+                 ]
+                },
+                "lengthText": {
+                 "runs": [
+                  {
+                   "text": "4:29"
+                  }
+                 ]
+                },
+                "thumbnail": {
+                 "thumbnails": [
+                  {
+                   "url": "https://i.ytimg.com/vi/simulated-b/sddefault.jpg",
+                   "width": 400
+                  }
+                 ]
+                },
+                "navigationEndpoint": {
+                 "watchEndpoint": {
+                  "videoId": "simulated-b",
+                  "playlistId": "RDAMVMsimulated-b",
+                  "watchEndpointMusicSupportedConfigs": {
+                   "watchEndpointMusicConfig": {
+                    "musicVideoType": "MUSIC_VIDEO_TYPE_ATV"
+                   }
+                  }
+                 }
+                },
+                "selected": false
+               }
+              }
+             ],
+             "continuations": [
+              {
+               "nextContinuationData": {
+                "continuation": "SIMNEXT1"
+               }
+              }
+             ]
+            }
+           }
+          }
+         }
+        }
+       },
+       {
+        "tabRenderer": {
+         "endpoint": {
+          "browseEndpoint": {
+           "browseId": "MPLYt_simulated"
+          }
+         }
+        }
+       },
+       {
+        "tabRenderer": {
+         "endpoint": {
+          "browseEndpoint": {
+           "browseId": "MPTRt_simulated"
+          }
+         }
+        }
+       }
+      ]
+     }
+    }
+   }
+  }
+ },
+ "continuation": {
+  "continuationContents": {
+   "musicShelfContinuation": {
+    "contents": [
+     {
+      "musicResponsiveListItemRenderer": {
+       "playlistItemData": {
+        "videoId": "simulated-c"
+       },
+       "thumbnail": {
+        "musicThumbnailRenderer": {
+         "thumbnail": {
+          "thumbnails": [
+           {
+            "url": "https://lh3.googleusercontent.com/a=w60",
+            "width": 60,
+            "height": 60
+           },
+           {
+            "url": "https://lh3.googleusercontent.com/a=w226",
+            "width": 226,
+            "height": 226
+           }
+          ]
+         }
+        }
+       },
+       "flexColumns": [
+        {
+         "musicResponsiveListItemFlexColumnRenderer": {
+          "text": {
+           "runs": [
+            {
+             "text": "Lagu Lanjutan",
+             "navigationEndpoint": {
+              "watchEndpoint": {
+               "videoId": "simulated-c",
+               "watchEndpointMusicSupportedConfigs": {
+                "watchEndpointMusicConfig": {
+                 "musicVideoType": "MUSIC_VIDEO_TYPE_ATV"
+                }
+               }
+              }
+             }
+            }
+           ]
+          }
+         }
+        },
+        {
+         "musicResponsiveListItemFlexColumnRenderer": {
+          "text": {
+           "runs": [
+            {
+             "text": "Coldplay",
+             "navigationEndpoint": {
+              "browseEndpoint": {
+               "browseId": "UCartist1",
+               "browseEndpointContextSupportedConfigs": {
+                "browseEndpointContextMusicConfig": {
+                 "pageType": "MUSIC_PAGE_TYPE_ARTIST"
+                }
+               }
+              }
+             }
+            }
+           ]
+          }
+         }
+        }
+       ]
+      }
+     }
+    ]
+   }
+  }
+ }
+}

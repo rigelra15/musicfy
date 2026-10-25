@@ -1,0 +1,19 @@
+# Simulation scaffold. Add fault-injection scenarios under each mock, e.g.:
+#   scenarios:
+#     - overrides:
+#         conditions:
+#           latency: { delay_ms: 500 }
+# Then serve it with: postman simulation run <this file>
+
+simulation: Musicfy YouTube Music search and lyrics
+routing: path
+mocks:
+  - name: Musicfy YouTube Music search
+    routeKey: youtube-music
+    path: ../mocks/youtube-music/config.yaml
+  - name: Musicfy YouTube Music catalog
+    routeKey: youtube-music-catalog
+    path: ../mocks/youtube-music-catalog/config.yaml
+  - name: Musicfy LRCLIB lyrics
+    routeKey: lrclib
+    path: ../mocks/lrclib/config.yaml

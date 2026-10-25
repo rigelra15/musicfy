@@ -1,0 +1,30 @@
+/* Keep native viewport units here: this outer frame maps the logical TV canvas to the real screen. */
+.app-viewport.is-tv-resolution {
+  --player-vw:12.8px;
+  --player-vh:7.2px;
+  --bleed:64px;
+  position:fixed;
+  left:calc((100vw - 1280px * var(--player-scale)) / 2);
+  top:calc((100vh - 720px * var(--player-scale)) / 2);
+  width:1280px;
+  height:720px;
+  overflow:hidden;
+  /* Focus must not scroll the fixed logical canvas after a resolution change. */
+  overflow:clip;
+  transform:scale(var(--player-scale));
+  transform-origin:top left;
+}
+/* Only the page scrolls. Fixed descendants resolve against the transformed canvas, so
+   navigation, mini-player, toast and overlays stay in the same logical screen coordinates. */
+.is-tv-resolution .tv-shell { display:flex; flex-direction:column; height:720px; min-height:720px; }
+.is-tv-resolution .app-topbar { flex:none; }
+.is-tv-resolution .app-stage { flex:1; min-height:0; width:100%; overflow-x:hidden; overflow-y:auto; overscroll-behavior:contain; scroll-padding-block:12px 128px; padding-bottom:20px; scrollbar-width:none; }
+.is-tv-resolution .app-stage::-webkit-scrollbar { display:none; }
+.is-tv-resolution .has-mini .app-stage { padding-bottom:128px; }
+.is-player-resolution .app-stage { overflow:clip; }
+/* The logical height stays 720px even when the physical viewport is taller. */
+.is-tv-resolution .app-stage { padding-top:12px; }
+.is-player-resolution .player-with-lyrics { padding:0; }
+.is-player-resolution .player-card .player-details { margin-top:10px; }
+.is-player-resolution .player-card .player-progress { margin-top:6px; }
+.is-player-resolution .player-card .player-controls { margin-top:4px; }

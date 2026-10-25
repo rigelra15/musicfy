@@ -1,0 +1,5 @@
+{
+  "id": "com.musicfy.webos.service",
+  "description": "Musicfy on-device networking",
+  "services": [{"name": "com.musicfy.webos.service", "description": "Musicfy app session"}]
+}

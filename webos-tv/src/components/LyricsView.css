@@ -1,0 +1,58 @@
+.lyrics-heading { display:flex; flex-wrap:wrap; align-items:flex-start; justify-content:space-between; gap:24px; }
+.lyrics-heading h2 { margin:0; font-size:clamp(32px,calc(3 * var(--player-vw, 1vw)),48px); }
+.lyrics-options { max-width:100%; font-size:18px; }
+.lyrics-options summary { padding:12px; border-radius:8px; cursor:pointer; }
+.lyrics-option-fields { display:flex; flex-direction:column; gap:14px; margin-top:14px; padding:18px; border-radius:12px; background:var(--surface); }
+.lyrics-option-fields label { display:flex; gap:14px; align-items:center; justify-content:space-between; }
+.lyrics-option-fields select { min-width:150px; max-width:380px; background:var(--surface-raised); color:#fff; border:1px solid var(--line); padding:10px; border-radius:8px; font:inherit; }
+.lyrics-option-fields button { background:var(--primary); color:#000; border:0; padding:12px; border-radius:8px; font:inherit; }
+.lyrics-source-credit { color:var(--muted); margin:20px 0 0; font-size:16px; }
+.lyric-piece { white-space:pre; background:linear-gradient(to right,#fff var(--sung),#77777d var(--sung)); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; }
+.lyrics-line.is-background { font-size:.8em; }
+.lyrics-line.is-second-voice { text-align:right; }
+.lyrics-motion-motion .lyrics-line.is-active .lyric-piece.is-sung, .lyrics-motion-motion .lyric-group.is-active .lyric-piece.is-sung { transform:translateY(-3px); }
+.lyrics-motion-motion .lyric-piece { display:inline-block; transition:transform .2s ease-out; transition-delay:calc(var(--i,0) * 12ms); }
+@media(prefers-reduced-motion:reduce) { .lyrics-motion-motion .lyric-piece { transform:none!important; transition:none; } }
+.lyrics-embedded { height:min(calc(72 * var(--player-vh, 1vh)),800px); min-height:0; display:flex; flex-direction:column; min-width:0; }
+.lyrics-viewport { flex:1; min-height:0; position:relative; overflow-y:auto; overflow-x:hidden; overscroll-behavior:contain; scrollbar-width:none; outline-offset:-3px; -webkit-mask-image:linear-gradient(to bottom,transparent,#000 10%,#000 85%,transparent); mask-image:linear-gradient(to bottom,transparent,#000 10%,#000 85%,transparent); }
+/* The rail is plain content of the scrolling viewport; its padding lets the first and last group reach the 42% line. */
+.lyrics-rail { position:relative; width:100%; padding:calc(30 * var(--player-vh, 1vh)) 0 calc(36 * var(--player-vh, 1vh)); box-sizing:border-box; }
+.lyrics-viewport::-webkit-scrollbar { display:none; }
+/* One group is one moment of the song: the main line and, in the same breath, its backing or echo line. It grows and shrinks as a whole,
+   with the same easing both ways, so nothing snaps back. */
+.lyric-group { margin:0 0 26px; transform-origin:left center; opacity:.45; transition:transform 480ms cubic-bezier(.22,.8,.2,1), opacity 320ms ease-out, filter 320ms ease-out; will-change:transform; }
+.lyric-group.is-active { opacity:1; transform:scale(1.035); }
+.lyric-group.is-past { opacity:.25; }
+.lyrics-embedded .lyrics-line { margin:0; font-size:clamp(26px,calc(2.6 * var(--player-vw, 1vw)),44px); line-height:1.45; color:#fff; }
+.lyrics-embedded .lyrics-line.is-background { margin-top:-.1em; font-size:clamp(18px,calc(1.7 * var(--player-vw, 1vw)),28px); line-height:1.3; opacity:.85; }
+.lyrics-embedded .lyrics-line.is-second-voice { text-align:right; }
+.lyrics-embedded .lyric-group:has(.is-second-voice) { transform-origin:right center; }
+.lyrics-embedded .lyrics-source-credit { margin-top:12px; font-size:13px; opacity:.65; }
+.lyrics-embedded .lyrics-message { margin:auto 0; }
+.lyrics-embedded .lyrics-text { max-height:none; flex:1; margin:0; }
+@media(prefers-reduced-motion:reduce) { .lyric-group { transition:none; } }
+
+.lyric-sub { display:block; margin-top:4px; font-size:.5em; line-height:1.3; font-weight:400; }
+.lyric-reading { color:#b8b8be; font-style:italic; }
+.lyric-translation { color:#9ec5ff; }
+.lyric-group.is-active .lyric-sub { opacity:1; }
+.plain-line { display:block; }
+.lyrics-status { margin:0 0 8px; color:var(--muted); font-size:16px; }
+.lyrics-status.is-error { color:#ff9c9c; }
+.lyrics-source-credit .inline-link { font-size:inherit; }
+
+.lyrics-intro { display:inline-flex; align-items:center; gap:.36em; min-height:1.45em; color:inherit; }
+.lyrics-intro > span { width:.24em; height:.24em; border-radius:50%; background:linear-gradient(to right,#fff var(--sung),#77777d var(--sung)); }
+
+/* The line being sung grows a little, so the lines wrap a little narrower than the view and the grown line is never cut off at its edge. */
+.lyrics-embedded .lyrics-rail { width: 94%; }
+.lyrics-embedded .lyrics-viewport { padding-right: 0; }
+
+/* The dots before the first line are a line of their own: bright only while the intro plays, then dim and blurred like any sung line. */
+.lyrics-embedded .lyrics-intro-line { margin:0 0 26px; opacity:.45; transform-origin:left center; transition:transform 480ms cubic-bezier(.22,.8,.2,1), opacity 320ms ease-out, filter 320ms ease-out; }
+.lyrics-embedded .lyrics-intro-line.is-active { opacity:1; transform:scale(1.035); }
+.lyrics-embedded .lyrics-intro-line.is-past { opacity:.25; }
+@media(prefers-reduced-motion:reduce) { .lyrics-embedded .lyrics-intro-line { transition:none; } }
+
+/* Blurred lines spread past their box; the scrolling view clips at its edge, so it carries room on both sides (and gives it back as negative margin, so nothing moves). */
+.lyrics-embedded .lyrics-viewport { padding-inline: 28px; margin-inline: -28px; }

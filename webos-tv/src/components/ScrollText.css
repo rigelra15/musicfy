@@ -1,0 +1,11 @@
+.scroll-text { display:block; min-width:0; max-width:100%; overflow:hidden; white-space:nowrap; text-align:left; }
+.scroll-text-content { display:block; width:max-content; min-width:100%; white-space:nowrap; }
+.scroll-text[data-overflow='true'][data-reduced='false'] .scroll-text-content { will-change:transform; }
+.scroll-text[data-reduced='true'] .scroll-text-content { width:100%; overflow:hidden; text-overflow:ellipsis; }
+.scroll-text .inline-link { white-space:nowrap; }
+.scroll-text .inline-link:focus-visible { outline-offset:-2px; }
+.scroll-text { --scroll-fade:.7em; }
+.scroll-text[data-overflow='true'][data-reduced='false']:not(:focus-within) { -webkit-mask-image:var(--scroll-mask); mask-image:var(--scroll-mask); }
+.scroll-text[data-fade='end'] { --scroll-mask:linear-gradient(to right,#000 0,#000 calc(100% - var(--scroll-fade)),transparent 100%); }
+.scroll-text[data-fade='both'] { --scroll-mask:linear-gradient(to right,transparent 0,#000 var(--scroll-fade),#000 calc(100% - var(--scroll-fade)),transparent 100%); }
+.scroll-text[data-fade='start'] { --scroll-mask:linear-gradient(to right,transparent 0,#000 var(--scroll-fade),#000 100%); }
