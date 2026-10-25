@@ -1,3 +1,15 @@
+<div align="center">
+
+<a href="webos-tv/README.md"><img src="webos-tv/assets/cover.png" alt="Musicfy for LG webOS TV" width="100%"></a>
+
+**Musicfy for LG webOS TV** is an unofficial TV port in this fork: [`webos-tv/`](webos-tv/README.md).
+The Android app below, and the original idea, are by [realidkroo](https://github.com/realidkroo) and [realkeichi](https://github.com/realkeichi) ([original repository](https://github.com/realidkroo/musicfy)); the TV port is by [Rigel Ramadhani Waloni](https://github.com/rigelra15). Both are GPL-3.0.
+Issues about the TV app belong in this fork, not in the original repository.
+
+</div>
+
+---
+
 <img width="1799" height="927" alt="i" src="https://github.com/user-attachments/assets/1ecb7a39-2114-40ba-9306-51ebf385780a" />
 
 ---
@@ -50,11 +62,6 @@
 
 > [!WARNING]
 > I dont support forks, please do not commit issue from forked apps here.
-
----
-## Musicfy for LG webOS TV (unofficial fork)
-This fork adds an unofficial TV port in [`webos-tv/`](webos-tv/README.md): the same product idea, rebuilt for the LG webOS remote. The Android app and its credits stay with [realidkroo](https://github.com/realidkroo) and [realkeichi](https://github.com/realkeichi); the TV port is by [Rigel Ramadhani Waloni](https://github.com/rigelra15). Both are GPL-3.0.
-**Issues about the TV app belong in this fork, not in the original repository.**
 
 ---
 ## How to install? 
