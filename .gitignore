@@ -19,3 +19,7 @@ artifacts/
 CLAUDE.md
 .superpowers/
 design-plans/evidence/
+
+# Planning notes stay local
+docs/
+design-plans/

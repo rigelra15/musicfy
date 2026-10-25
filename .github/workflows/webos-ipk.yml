@@ -4,14 +4,9 @@ on:
   workflow_dispatch:
   push:
     branches: [ webos-tv ]
-    paths:
-      - 'webos-tv/**'
-      - '.github/workflows/webos-ipk.yml'
     tags:
       - 'webos-v*'
   pull_request:
-    paths:
-      - 'webos-tv/**'
 
 permissions:
   contents: read
@@ -20,9 +15,6 @@ jobs:
   ipk:
     name: Test and package the IPK
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: webos-tv
     steps:
       - uses: actions/checkout@v5
 
@@ -30,7 +22,7 @@ jobs:
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: webos-tv/package-lock.json
+          cache-dependency-path: package-lock.json
 
       - name: Install the webOS CLI (ares-package)
         run: npm install --global @webos-tools/cli
@@ -53,7 +45,7 @@ jobs:
           version=$(node -p "require('./public/appinfo.json').version")
           file="artifacts/com.musicfy.webos_${version}_all.ipk"
           test -f "$file" || { echo "Expected $file was not built" >&2; exit 1; }
-          echo "file=webos-tv/$file" >> "$GITHUB_OUTPUT"
+          echo "file=$file" >> "$GITHUB_OUTPUT"
           echo "name=$(basename "$file")" >> "$GITHUB_OUTPUT"
           echo "version=$version" >> "$GITHUB_OUTPUT"
 

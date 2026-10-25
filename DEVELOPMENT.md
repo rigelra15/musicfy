@@ -1,6 +1,6 @@
 # Musicfy for LG webOS TV: developer notes
 
-This folder is the TV app. The overview, credits, install guide and license are in the [repository README](../README.md); this file is for people changing the code.
+The overview, credits, install guide and license are in the [README](README.md); this file is for people changing the code.
 
 ## Layout
 

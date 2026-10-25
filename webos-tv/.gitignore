@@ -1,8 +1,0 @@
-node_modules/
-dist/
-artifacts/
-coverage/
-.DS_Store
-*.ipk
-.env
-.env.*

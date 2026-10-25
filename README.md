@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="webos-tv/assets/cover.png" alt="Musicfy for LG webOS TV" width="100%">
+<img src="assets/cover.png" alt="Musicfy for LG webOS TV" width="100%">
 
 # Musicfy for LG webOS TV
 
@@ -40,7 +40,7 @@ Synced lyrics, your own library and several audio sources on the big screen. Ope
 
 ## Credits and origin
 
-Musicfy was made by **realidkroo** and **realkeichi**: the product idea, the design language, the screens and their order, the onboarding, the settings, the audio-source and lyrics-provider contracts and the phone-to-TV transfer idea all come from their Android app. This TV app is an independent port by [Rigel Ramadhani Waloni](https://github.com/rigelra15), written for the web platform (a Preact and TypeScript UI plus a Node 16 service that runs on the TV). It follows the original's behaviour closely but does not copy its Kotlin code, apart from the onboarding icons, which are the Android app's vector drawables, kept in `webos-tv/assets/onboarding-icons/`.
+Musicfy was made by **realidkroo** and **realkeichi**: the product idea, the design language, the screens and their order, the onboarding, the settings, the audio-source and lyrics-provider contracts and the phone-to-TV transfer idea all come from their Android app. This TV app is an independent port by [Rigel Ramadhani Waloni](https://github.com/rigelra15), written for the web platform (a Preact and TypeScript UI plus a Node 16 service that runs on the TV). It follows the original's behaviour closely but does not copy its Kotlin code, apart from the onboarding icons, which are the Android app's vector drawables, kept in `assets/onboarding-icons/`.
 
 The original app itself is a fork of ViviMusic and builds on Metrolist, RiMusic and ArchiveTune, credited in [Thanks](#thanks). If you like this, please also star the original project.
 
@@ -135,7 +135,7 @@ The TV keeps its own library, separate from your phone. To bring yours:
 ## Honest limits
 
 - **Apple Music cannot be signed in on the TV itself.** Apple's sign-in only runs on `music.apple.com`, which cannot be embedded in another app, and whose token is only valid for the `apple.com` origin. So the session is created on the phone and sent to the TV. Apple Music playback through DRM on the TV is **not proven** yet.
-- Not everything has been verified on a real TV. [`webos-tv/VALIDATION.md`](webos-tv/VALIDATION.md) lists what is proven and what is not, and the in-app Diagnostics screen shows the same.
+- Not everything has been verified on a real TV. [`VALIDATION.md`](VALIDATION.md) lists what is proven and what is not, and the in-app Diagnostics screen shows the same.
 - External providers (lyrics, catalog, audio sources) can be limited or unavailable at any moment.
 
 ## Build it yourself
@@ -145,24 +145,23 @@ The TV keeps its own library, separate from your phone. To bring yours:
 Needs Node 22.12 or newer and the webOS CLI (`@webos-tools/cli`):
 
 ```sh
-cd webos-tv
 npm ci
 npm run typecheck
 npm test
 npm run package:ipk
 ```
 
-The package ends up in `webos-tv/artifacts/com.musicfy.webos_<version>_all.ipk`. To try the interface in a browser while you work:
+The package ends up in `artifacts/com.musicfy.webos_<version>_all.ipk`. To try the interface in a browser while you work:
 
 ```sh
 npm run dev -- --port 4177
 ```
 
-The dev server uses the same service handler as the TV, so it is close to the real thing; it is only a preview and the installed app does not need it. More detail is in [`webos-tv/README.md`](webos-tv/README.md), [`webos-tv/server/API.md`](webos-tv/server/API.md) and [`webos-tv/TRANSFER.md`](webos-tv/TRANSFER.md).
+The dev server uses the same service handler as the TV, so it is close to the real thing; it is only a preview and the installed app does not need it. More detail is in [`DEVELOPMENT.md`](DEVELOPMENT.md), [`server/API.md`](server/API.md) and [`TRANSFER.md`](TRANSFER.md).
 
 ### Releases built by GitHub Actions
 
-The workflow [`webos-ipk.yml`](.github/workflows/webos-ipk.yml) type-checks, tests and packages the IPK on every push to `webos-tv` that touches `webos-tv/`, and on pull requests. The IPK is attached to the run as an artifact. To publish a release, change the version in `webos-tv/public/appinfo.json`, then push a tag that matches it:
+The workflow [`webos-ipk.yml`](.github/workflows/webos-ipk.yml) type-checks, tests and packages the IPK on every push to the `webos-tv` branch and on pull requests. The IPK is attached to the run as an artifact. To publish a release, change the version in `public/appinfo.json`, then push a tag that matches it:
 
 ```sh
 git tag webos-v0.4.0
@@ -175,8 +174,12 @@ The workflow refuses a tag that does not match the app version, builds the IPK a
 
 | Folder | What it is |
 | --- | --- |
-| `webos-tv/` | The TV app: UI (`src/`), the on-TV service (`service/`), tests, packaging scripts and docs |
-| `docs/`, `design-plans/` | Plans, specs, the parity matrix and audits of the TV port (they mention the original Android app as the reference) |
+| `src/` | The Preact + TypeScript UI: shell, router, remote control, pages, features, playback, lyrics, library, sources |
+| `service/` | The Node 16 service that runs on the TV: catalog, lyrics, sources, links, scrobbling, phone transfer |
+| `server/` | Tests and fixtures for the service, and the service contracts in `API.md` |
+| `public/` | `appinfo.json`, icons, fonts, the bundled webOSTV.js |
+| `scripts/`, `tools/`, `postman/` | Packaging and generators, evidence tooling, mock servers |
+| `assets/` | The README cover and the onboarding icon sources |
 | `.github/` | The `webOS TV IPK` workflow, the stale-issue handler and contribution templates |
 
 ## License
@@ -187,10 +190,10 @@ Third-party parts keep their own licenses:
 
 | Part | License |
 | --- | --- |
-| webOSTV.js 1.2.13 (LG) | Apache 2.0, in `webos-tv/public/vendor/webOSTVjs-1.2.13/` |
-| Lucide icons | ISC, `webos-tv/public/vendor/lucide-LICENSE.txt` |
-| Inter font | SIL Open Font License 1.1, `webos-tv/public/fonts/Inter-LICENSE.txt` |
-| shaka-player, preact, iconify-icon, qrcode-generator | their own licenses, see `webos-tv/package.json` |
+| webOSTV.js 1.2.13 (LG) | Apache 2.0, in `public/vendor/webOSTVjs-1.2.13/` |
+| Lucide icons | ISC, `public/vendor/lucide-LICENSE.txt` |
+| Inter font | SIL Open Font License 1.1, `public/fonts/Inter-LICENSE.txt` |
+| shaka-player, preact, iconify-icon, qrcode-generator | their own licenses, see `package.json` |
 
 ## Disclaimer
 

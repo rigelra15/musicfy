@@ -8,7 +8,7 @@
 ## Screenshots / recordings
 
 ## Checklist
-- [ ] `npm run typecheck` and `npm test` pass in `webos-tv/`
+- [ ] `npm run typecheck` and `npm test` pass
 - [ ] I checked the change in the browser preview (`npm run dev`) or on an LG TV
 - [ ] I updated the documentation if needed
 

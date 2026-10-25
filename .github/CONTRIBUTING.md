@@ -12,7 +12,6 @@ Thanks for wanting to help. This is an unofficial TV port of [Musicfy](https://g
 - An LG webOS TV in Developer Mode if you want to try it on a real TV (the install guide is in the [README](../README.md#install-on-your-tv))
 
 ```sh
-cd webos-tv
 npm ci
 npm run dev -- --port 4177   # browser preview
 npm run typecheck
@@ -20,7 +19,7 @@ npm test
 npm run package:ipk
 ```
 
-Developer notes (layout, service, remote control) are in [`webos-tv/README.md`](../webos-tv/README.md).
+Developer notes (layout, service, remote control) are in [`DEVELOPMENT.md`](../DEVELOPMENT.md).
 
 ## Making a change
 
